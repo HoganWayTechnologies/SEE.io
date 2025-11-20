@@ -1,0 +1,239 @@
+{
+  "title": "SEEAPI Token Exchange: Endpoints & Integration Steps",
+  "generatedAt": "2025-11-14T00:00:00Z",
+  "summary": "This document lists the HTTP endpoints used in the Socxal → Firebase token-exchange flow and the concrete steps a SEEAPI service must perform to accept and trust users who sign in using the exchanged Firebase tokens.",
+  "endpoints": [
+    {
+      "service": "SocxalAPI (auth)",
+      "name": "Socxal Sign In (email/password or OAuth)",
+      "method": "POST",
+      "path": "/api/Auth/login",
+      "auth": "public",
+      "description": "Primary Socxal sign-in endpoint. Returns a Socxal access token (JWT/OAuth token) and session info. The client uses this Socxal token to call the token-exchange endpoint (/api/Auth/exchange-to-firebase).",
+      "request": {
+        "contentType": "application/json",
+        "body": {
+          "email": "string",
+          "password": "string",
+          "provider": "optional OAuth provider info if using social login"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success - returns Socxal access token and basic user info",
+          "body": {
+            "access_token": "<Socxal_Access_Token>",
+            "expires_in": "seconds",
+            "user": { "id": "<socxal_user_id>", "email": "..." }
+          }
+        },
+        "400": "Bad request",
+        "401": "Invalid credentials"
+      },
+      "notes": [
+        "This is the flow the SEE front-end uses to authenticate with Socxal before requesting a Firebase custom token from SocxalAPI.",
+        "If using OAuth/social login, the client may redirect back or call the provider callback endpoint which issues the same Socxal access token."
+      ]
+    },
+    {
+      "service": "SocxalAPI (auth)",
+      "name": "Socxal Sign Up / Register",
+      "method": "POST",
+      "path": "/api/Auth/register",
+      "auth": "public",
+      "description": "Create a new Socxal account. Returns Socxal access token on success (or requires email verification depending on policy).",
+      "request": {
+        "contentType": "application/json",
+        "body": {
+          "email": "string",
+          "password": "string",
+          "displayName": "optional"
+        }
+      },
+      "responses": { "201": "Created - returns access token or verification required", "400": "Bad request" },
+      "notes": ["Front-end should call this when user signs up in SEE app if they want to create a Socxal account first."]
+    },
+    {
+      "service": "SocxalAPI (auth)",
+      "name": "Socxal Logout / Revoke Session",
+      "method": "POST",
+      "path": "/api/Auth/logout",
+      "auth": "Bearer <Socxal_Access_Token>",
+      "description": "Log out Socxal session. In addition to server-side session cleanup, operator processes may call Firebase revoke endpoints to force sign-out from Firebase if needed.",
+      "responses": { "200": "Ok" },
+      "notes": ["Front-end should call this on user logout. Optionally call SocxalAPI admin revoke to also call FirebaseAuth.RevokeRefreshTokens(uid) if immediate Firebase sign-out is required."]
+    },
+    {
+      "service": "SocxalAPI (auth)",
+      "name": "Socxal Account Profile (me)",
+      "method": "GET",
+      "path": "/api/Auth/me",
+      "auth": "Bearer <Socxal_Access_Token>",
+      "description": "Return the current Socxal user profile. Useful for the front-end to populate UI and decide whether to call the exchange endpoint.",
+      "responses": { "200": { "body": { "id": "...", "email": "...", "displayName": "..." } }, "401": "Unauthorized" }
+    },
+    {
+      "service": "SocxalAPI (issuer)",
+      "name": "Exchange to Firebase",
+      "method": "POST",
+      "path": "/api/Auth/exchange-to-firebase",
+      "auth": "Bearer Socxal access token required (Authorize attribute)",
+      "description": "Server-side exchange: validated Socxal session -> mint Firebase custom token for the Socxal UID. Hardened with per-user rate limits and audit logging.",
+      "request": {
+        "contentType": "application/json",
+        "body": "{} (no body required). Optional body may include preferred firebase uid/email displayName fields if desired by policy",
+        "headers": {
+          "Authorization": "Bearer <Socxal_Access_Token>"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success - returns a Firebase custom token the client can sign in with",
+          "body": {
+            "firebaseToken": "<customToken>",
+            "uid": "<socxal_user_id>",
+            "expires_in": "(optional) token TTL hints"
+          }
+        },
+        "401": "Unauthorized - token missing/invalid",
+        "429": "Too Many Requests - rate limit hit",
+        "500": "Server error - token mint failed"
+      },
+      "notes": [
+        "SocxalAPI mints a Firebase custom token using Firebase Admin SDK: CreateCustomTokenAsync(uid, customClaims)",
+        "Audit every attempt into ExchangeAudits table with user id, IP, result, and reason",
+        "Rate limiter should be shared or replaced with Redis in multi-instance deployments"
+      ]
+    },
+    {
+      "service": "SocxalAPI (admin)",
+      "name": "Revoke Firebase refresh tokens (optional admin)",
+      "method": "POST",
+      "path": "/api/Auth/revoke-firebase-refresh/{uid}",
+      "auth": "Restricted to admin/service account",
+      "description": "Operator or Socxal admin calls this to force sign-out by revoking refresh tokens on Firebase for a given uid.",
+      "request": {
+        "params": {
+          "uid": "Firebase UID / Socxal UID mapped to Firebase"
+        }
+      },
+      "responses": { "200": "Ok", "403": "Forbidden", "404": "User not found" },
+      "notes": [
+        "Implements FirebaseAuth.RevokeRefreshTokens(uid) under the hood",
+        "Use when the Socxal account is disabled or needs immediate session invalidation"
+      ]
+    },
+    {
+      "service": "SEEAPI (consumer)",
+      "name": "Protected resource endpoints",
+      "method": "ANY",
+      "path": "/api/... (your protected routes)",
+      "auth": "Bearer <Firebase ID token> or cookie carrying Firebase ID token",
+      "description": "SEEAPI endpoints accept Firebase ID tokens from the client which signed-in with the custom token returned by SocxalAPI.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <Firebase_ID_Token>"
+        }
+      },
+      "responses": {
+        "200": "Success - request processed under Firebase-authenticated identity",
+        "401": "Invalid/expired/revoked ID token",
+        "403": "Authorized but forbidden"
+      },
+      "notes": [
+        "SEEAPI must verify the ID token signature and claims before accepting requests",
+        "Verification should be done with Firebase Admin SDK or JWT verification against Google public keys",
+        "Optionally check revocation by comparing token issued-at/auth_time to user's TokensValidAfterTimestamp",
+        "Map firebase uid and custom claims to local user/roles as needed"
+      ]
+    },
+    {
+      "service": "Client (Firebase)",
+      "name": "Client: signInWithCustomToken (Firebase SDK)",
+      "method": "N/A (client SDK)",
+      "path": "N/A",
+      "auth": "N/A",
+      "description": "Client-side operation: after receiving a Socxal-minted Firebase custom token the front-end calls Firebase client SDK signInWithCustomToken(customToken) which returns Firebase ID token + refresh token. Those ID tokens are then used to call SEEAPI protected endpoints.",
+      "notes": [
+        "This is a client SDK operation (web, iOS, Android). Provide the custom token returned from /api/Auth/exchange-to-firebase to the SDK.",
+        "Do not send the Socxal access token to SEEAPI directly; SEEAPI should only accept Firebase ID tokens in this integration model."
+      ]
+    },
+    {
+      "service": "SEEAPI (optional)",
+      "name": "Link Socxal <-> SEE account (optional)",
+      "method": "POST",
+      "path": "/api/Auth/link-socxal-to-see",
+      "auth": "Bearer <Firebase ID token> or combine Socxal auth and Firebase ID token depending on policy",
+      "description": "Idempotent endpoint to link or provision a SEE local account for the Firebase-identified user. Useful when richer local profile or permissions are required.",
+      "request": {
+        "contentType": "application/json",
+        "body": {
+          "preferredDisplayName": "optional",
+          "metadata": "optional"
+        }
+      },
+      "responses": { "200": "Linked/provisioned", "401": "Unauthorized" },
+      "notes": [
+        "Should be safe to call on first sign-in — create local user row keyed by firebase uid",
+        "Persist mapping so future requests can perform fast lookups"
+      ]
+    }
+  ],
+  "seeapi_integration_steps": [
+    {
+      "step": 1,
+      "title": "Accept Firebase ID tokens from clients",
+      "details": "Clients will sign into Firebase using the custom token returned by SocxalAPI. They receive a Firebase ID token and refresh token via the Firebase client SDKs. SEEAPI should accept the ID token in Authorization: Bearer <ID_TOKEN> headers on protected routes."
+    },
+    {
+      "step": 2,
+      "title": "Initialize Firebase Admin SDK in SEEAPI",
+      "details": "Install and initialize the Firebase Admin SDK with a service account that has permission to verify tokens and (optionally) read user metadata. Use secure secret provisioning (environment variable or secrets manager). Example: initialize once during application startup."
+    },
+    {
+      "step": 3,
+      "title": "Verify ID token on each request",
+      "details": "Use FirebaseAuth.VerifyIdTokenAsync(idToken) (or equivalent) to validate signature, expiration, audience (project id), and retrieve token claims and uid. The Admin SDK caches public keys; no heavy repeated downloads are required."
+    },
+    {
+      "step": 4,
+      "title": "Optionally check token revocation",
+      "details": "If you need immediate Socxal-driven sign-out, SEEAPI should compare token issued-at/auth_time against Firebase user.TokensValidAfterTimestamp. If the token was issued before TokensValidAfterTimestamp, treat it as revoked. SocxalAPI should call FirebaseAuth.RevokeRefreshTokens(uid) to rotate this timestamp when disabling users."
+    },
+    {
+      "step": 5,
+      "title": "Map or provision local SEE user",
+      "details": "After verification, map the Firebase uid (and the Socxal user id if present via a custom claim) to a local SEE account. If none exists, auto-provision a minimal user record (uid, email, displayName, link to Socxal id). Persist the mapping for future fast lookups."
+    },
+    {
+      "step": 6,
+      "title": "Copy and use custom claims for authorization",
+      "details": "When SocxalAPI mints the custom token it may add small canonical claims (roles, tenant id). After the client signs in those custom claims will be present on ID tokens returned by Firebase; SEEAPI should read them from the verified token and convert them into local ClaimsPrincipal claims or roles as appropriate. Avoid putting large authoritative data in custom claims — use Socxal as the source of truth for anything sensitive."
+    },
+    {
+      "step": 7,
+      "title": "Protect admin operations and revocation endpoints",
+      "details": "If SEEAPI exposes any admin endpoints that call FirebaseAuth.RevokeRefreshTokens or perform mappings, ensure they are strongly protected and audited."
+    },
+    {
+      "step": 8,
+      "title": "Add monitoring and metrics",
+      "details": "Emit metrics for authentication success/failure, revoked-token detections, 401/403 rates, and rate-limited requests. Alert on abnormal spikes."
+    },
+    {
+      "step": 9,
+      "title": "Test the end-to-end flow",
+      "details": "Test with the Firebase emulator if you prefer not to use production credentials: 1) call SocxalAPI /exchange-to-firebase to get a custom token; 2) sign in with the emulator SDK (or real client) to obtain ID token; 3) call SEEAPI protected endpoint with that ID token and verify authorized access and provisioning behavior."
+    }
+  ],
+  "examples_and_notes": {
+    "firebase_verification_example": "Use Firebase Admin SDK: var decoded = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(idToken); var uid = decoded.Uid;",
+    "revocation_check_example": "var user = await FirebaseAuth.DefaultInstance.GetUserAsync(uid); if (user.TokensValidAfterTimestamp > 0 && decoded.IssuedAtTimeSeconds < user.TokensValidAfterTimestamp/1000) -> treat as revoked",
+    "security_notes": [
+      "Do not accept Socxal tokens directly on SEEAPI — use Firebase ID token that client obtained by signing in with Socxal-minted custom token",
+      "Keep Firebase service account secure and separate per-environment",
+      "Prefer short opinionated custom claims and use Socxal for authoritative decisions"
+    ]
+  }
+}

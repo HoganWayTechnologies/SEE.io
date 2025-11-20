@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #__next {
+  height: 100%;
+}
+
+/* Simple Socxal blue-green gradient */
+.socxal-gradient {
+  background: linear-gradient(90deg,#00bfa6 0%,#0066ff 100%);
+}

@@ -1,0 +1,288 @@
+{
+  "info": {
+    "title": "SEE API Endpoints",
+    "version": "v1",
+    "description": "Compact JSON catalog of endpoints, params, auth requirements and request/response schemas for the frontend"
+  },
+  "servers": [
+    { "url": "https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SEEAPI/", "description": "azure-deployment" },
+    { "url": "https://localhost:7108", "description": "local-https" },
+    { "url": "http://localhost:5154", "description": "local-http" }
+  ],
+  "endpoints": [
+    {
+      "path": "/v1/public/events",
+      "method": "GET",
+      "auth": "anonymous (rate-limited public policy)",
+      "description": "Search public events. Accepts geo, text, and address hints; DB-first then discovery fallback.",
+      "queryParams": [
+        { "name": "lat", "type": "number", "required": false },
+        { "name": "lng", "type": "number", "required": false, "note": "alias for lon" },
+        { "name": "lon", "type": "number", "required": false, "note": "alias for lng" },
+        { "name": "distanceKm", "type": "integer", "required": false, "note": "alias for radiusKm" },
+        { "name": "radiusKm", "type": "integer", "required": false, "note": "alias for distanceKm" },
+        { "name": "startUtc", "type": "string (date-time)", "required": false },
+        { "name": "category", "type": "string", "required": false },
+        { "name": "q", "type": "string", "required": false },
+        { "name": "city", "type": "string", "required": false, "note": "address hint - will geocode if lat/lon missing" },
+        { "name": "state", "type": "string", "required": false, "note": "address hint - will geocode if lat/lon missing" },
+        { "name": "venue", "type": "string", "required": false, "note": "address hint - will geocode if lat/lon missing" },
+        { "name": "take", "type": "integer", "required": false, "default": 50 },
+        { "name": "pageToken", "type": "string", "required": false },
+        { "name": "enableDiscovery", "type": "boolean", "required": false, "default": true },
+        { "name": "forceDiscover", "type": "boolean", "required": false, "default": false }
+      ],
+      "responses": {
+        "200": {
+          "description": "PagedResult<EventResponse>",
+          "schema": {
+            "items": "EventResponse[]",
+            "nextPageToken": "string | null"
+          }
+        },
+        "429": { "description": "Rate limited" }
+      }
+    },
+    {
+      "path": "/v1/public/events/{id}",
+      "method": "GET",
+      "auth": "anonymous",
+      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
+      "responses": { "200": { "schema": "EventResponse" }, "404": { "description": "NotFound" } }
+    },
+    {
+      "path": "/v1/events",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Advanced search with geo and text branches. DB-first, discovery fallback, re-query and return discovered results.",
+      "queryParams": [
+        { "name": "q", "type": "string", "required": false },
+        { "name": "status", "type": "string", "required": false, "note": "comma-separated; default active,planning" },
+        { "name": "category", "type": "string", "required": false },
+        { "name": "city", "type": "string", "required": false },
+        { "name": "state", "type": "string", "required": false },
+        { "name": "venue", "type": "string", "required": false },
+        { "name": "lat", "type": "number", "required": false },
+        { "name": "lon", "type": "number", "required": false },
+        { "name": "lng", "type": "number", "required": false, "note": "alias for lon" },
+        { "name": "radiusKm", "type": "integer", "required": false },
+        { "name": "distanceKm", "type": "integer", "required": false, "note": "alias for radiusKm" },
+        { "name": "fromUtc", "type": "string (date-time)", "required": false },
+        { "name": "toUtc", "type": "string (date-time)", "required": false },
+        { "name": "pageSize", "type": "integer", "required": false, "default": 20 },
+        { "name": "pageToken", "type": "string", "required": false },
+        { "name": "enableDiscovery", "type": "boolean", "required": false, "default": true },
+        { "name": "forceDiscover", "type": "boolean", "required": false, "default": false }
+      ],
+      "responses": {
+        "200": {
+          "description": "SearchResults containing items (EventDto[]), count, discovered flag",
+          "schema": {
+            "items": "EventDto[]",
+            "nextPageToken": "string | null",
+            "count": "integer",
+            "discovered": "boolean",
+            "discoveredSaved": "integer | null"
+          }
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{id}",
+      "method": "GET",
+      "auth": "anonymous",
+      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
+      "responses": { "200": { "schema": "EventDto" }, "404": { "description": "NotFound" } }
+    },
+    {
+      "path": "/v1/categories",
+      "method": "GET",
+      "auth": "anonymous",
+      "responses": { "200": { "description": "Array of categories", "schema": "CategoryItem[]" } }
+    },
+    {
+      "path": "/v1/public/reports",
+      "method": "POST",
+      "auth": "API key (x-api-key)",
+      "body": { "schema": "ReportEventRequest" },
+      "responses": { "202": { "schema": { "id": "string" } }, "401": { "description": "Unauthorized" } }
+    },
+    {
+      "path": "/v1/publisher/events",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "body": { "schema": "CreateEventRequest" },
+      "responses": { "201": { "schema": { "id": "string" }, "headers": { "Location": "string" } }, "401": {}, "403": {} }
+    },
+    {
+      "path": "/v1/publisher/events/{id}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
+      "body": { "schema": "UpdateEventRequest" },
+      "responses": { "204": {}, "401": {}, "403": {}, "404": {} }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/publish",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
+      "responses": { "200": {}, "404": {} }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/cancel",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
+      "responses": { "200": {} }
+    },
+    {
+      "path": "/v1/admin/events/{id}/verify",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
+      "queryParams": [ { "name": "v", "type": "boolean", "default": true } ],
+      "responses": { "200": {}, "401": {}, "403": {}, "404": {} }
+    },
+    {
+      "path": "/v1/admin/events/{id}/hide",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
+      "responses": { "200": {}, "404": {} }
+    },
+    {
+      "path": "/api/v1/admin/keys",
+      "method": "POST",
+      "auth": "API key (admin role required)",
+      "body": { "schema": "CreateKeyRequest", "required": false },
+      "responses": { "200": { "schema": "CreateKeyResponse" } }
+    },
+    {
+      "path": "/api/v1/admin/keys/{id}/revoke",
+      "method": "POST",
+      "auth": "API key (admin role required)",
+      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
+      "responses": { "204": {} }
+    },
+    {
+      "path": "/WeatherForecast",
+      "method": "GET",
+      "auth": "anonymous",
+      "responses": { "200": { "schema": "WeatherForecast[]" } }
+    }
+    ,
+    {
+      "path": "/admin/auth/me",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Return the current authenticated user's mapped profile from SEE (uid, email, displayName, socxalId)",
+      "responses": { "200": { "schema": "UserProfile" }, "401": { "description": "Unauthorized" } }
+    },
+    {
+      "path": "/v1/auth/link-socxal",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Link the currently authenticated user's account to a Socxal id (idempotent).",
+      "body": { "schema": "LinkSocxalRequest", "required": true },
+      "responses": { "200": { "schema": { "uid": "string", "socxalId": "string" } }, "401": { "description": "Unauthorized" } }
+    },
+    {
+      "path": "/v1/admin/claims/{userId}",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Get DB-stored claims for a user. userId may be Firebase UID or SocxalId.",
+      "pathParams": [ { "name": "userId", "type": "string", "required": true } ],
+      "responses": { "200": { "schema": "ClaimsMap" }, "401": {}, "403": {} }
+    },
+    {
+      "path": "/v1/admin/claims/{userId}",
+      "method": "PUT",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Replace all claims for a user (upsert).",
+      "pathParams": [ { "name": "userId", "type": "string", "required": true } ],
+      "body": { "schema": "ClaimsMap", "required": true },
+      "responses": { "204": {}, "401": {}, "403": {} }
+    },
+    {
+      "path": "/v1/admin/claims/{userId}",
+      "method": "PATCH",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Merge/update specific claim keys for a user.",
+      "pathParams": [ { "name": "userId", "type": "string", "required": true } ],
+      "body": { "schema": "ClaimsMap", "required": true },
+      "responses": { "204": {}, "401": {}, "403": {} }
+    },
+    {
+      "path": "/v1/admin/claims/{userId}/{claimKey}",
+      "method": "DELETE",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Remove a single claim for a user.",
+      "pathParams": [ { "name": "userId", "type": "string", "required": true }, { "name": "claimKey", "type": "string", "required": true } ],
+      "responses": { "204": {}, "401": {}, "403": {} }
+    }
+  ],
+  "schemas": {
+    "VenueRef": {
+      "name": "string",
+      "address": "string | null",
+      "lat": "number | null",
+      "lng": "number | null"
+    },
+    "CreateEventRequest": {
+      "title": "string",
+      "description": "string | null",
+      "startUtc": "string (date-time)",
+      "endUtc": "string (date-time)",
+      "timezone": "string",
+      "venue": "VenueRef",
+      "category": "string",
+      "tags": "string[]"
+    },
+    "UpdateEventRequest": "CreateEventRequest + { verified: boolean }",
+    "EventResponse": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "startUtc": "string (date-time)",
+      "endUtc": "string (date-time)",
+      "timezone": "string",
+      "venue": "VenueRef",
+      "category": "string",
+      "tags": "string[]",
+      "verified": "boolean",
+      "status": "string"
+    },
+    "EventDto": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "startUtc": "string (date-time)",
+      "endUtc": "string | null",
+      "timezone": "string | null",
+      "category": "string",
+      "tags": "string[]",
+      "status": "string",
+      "venueName": "string | null",
+      "venueAddress": "string | null",
+      "imageUrl": "string | null",
+      "lat": "number | null",
+      "lon": "number | null",
+      "geoHash": "string | null",
+      "state": "string | null"
+    },
+    "ReportEventRequest": {
+      "eventId": "string",
+      "category": "string",
+      "notes": "string | null"
+    },
+    "CategoryItem": { "id": "string", "name": "string", "tags": "string[]" },
+    "CreateKeyRequest": { "role": "string", "ownerId": "string | null", "perMinuteLimit": "integer | null", "expiresAt": "string(date-time) | null" },
+    "CreateKeyResponse": { "id": "string", "apiKey": "string", "role": "string", "last4": "string", "keyId": "string" },
+    "WeatherForecast": { "date": "date", "temperatureC": "integer", "summary": "string" }
+    ,
+    "UserProfile": { "uid": "string", "email": "string | null", "displayName": "string | null", "socxalId": "string | null" },
+    "LinkSocxalRequest": { "socxalId": "string" },
+    "ClaimsMap": { "description": "map of claimName->claimValue (string->string)", "example": { "role": "publisher", "tenant": "acme" } }
+  }
+}

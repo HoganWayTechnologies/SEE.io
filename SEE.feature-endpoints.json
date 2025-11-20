@@ -1,0 +1,58 @@
+{
+  "generated": "via Codex assistant",
+  "features": [
+    {
+      "name": "Profile Overview",
+      "summary": "Shows SEE identity, linked Socxal account, stats, and active sessions.",
+      "endpoints": [
+        { "service": "SocxalAPI", "method": "GET", "path": "/admin/auth/me", "purpose": "Primary identity payload (uid, email, linked Socxal id, roles)" },
+        { "service": "SEE.API", "method": "GET", "path": "/v1/events?status=attending", "purpose": "Fetch events the user is attending to power stats/history" },
+        { "service": "SEE.API", "method": "GET", "path": "/v1/users/{id}/sessions", "purpose": "List active sessions/devices (requires new endpoint if not present)" }
+      ]
+    },
+    {
+      "name": "Account Settings",
+      "summary": "Edit display name/contact info, change password, manage notifications and MFA.",
+      "endpoints": [
+        { "service": "SEE.API", "method": "PATCH", "path": "/v1/users/{id}", "purpose": "Update SEE-managed profile fields" },
+        { "service": "SEE.API", "method": "PUT", "path": "/v1/users/{id}/preferences", "purpose": "Persist notification + communication preferences" },
+        { "service": "SocxalAPI", "method": "POST", "path": "/api/Auth/reset-password", "purpose": "Trigger Socxal password reset" },
+        { "service": "SocxalAPI", "method": "POST", "path": "/api/Auth/update-profile", "purpose": "Sync display name / phone to Socxal" },
+        { "service": "SocxalAPI", "method": "POST", "path": "/api/Auth/logout-all", "purpose": "End sessions/device sign-outs" }
+      ]
+    },
+    {
+      "name": "Event Preferences",
+      "summary": "Let members follow categories, save locations, control discovery filters.",
+      "endpoints": [
+        { "service": "SEE.API", "method": "GET", "path": "/v1/categories", "purpose": "Populate selectable category chips" },
+        { "service": "SEE.API", "method": "PUT", "path": "/v1/users/{id}/preferences/categories", "purpose": "Save favorite categories" },
+        { "service": "SEE.API", "method": "PUT", "path": "/v1/users/{id}/preferences/locations", "purpose": "Persist saved search locations + radius" },
+        { "service": "SEE.API", "method": "GET", "path": "/v1/events", "purpose": "Use discovery toggles (status, enableDiscovery, forceDiscover) for previews" }
+      ]
+    },
+    {
+      "name": "Publisher Dashboard",
+      "summary": "Organizer console for creating and managing events, uploads, and stats.",
+      "endpoints": [
+        { "service": "SEE.API", "method": "GET", "path": "/v1/publisher/events", "purpose": "List organizer events with filters" },
+        { "service": "SEE.API", "method": "POST", "path": "/v1/publisher/events", "purpose": "Create new events" },
+        { "service": "SEE.API", "method": "PUT", "path": "/v1/publisher/events/{id}", "purpose": "Update event metadata/status" },
+        { "service": "SEE.API", "method": "POST", "path": "/v1/publisher/events/{id}/images", "purpose": "Upload hero/gallery imagery" },
+        { "service": "SEE.API", "method": "GET", "path": "/v1/publisher/events/{id}/stats", "purpose": "Power tickets/views metrics" },
+        { "service": "SEE.API", "method": "GET", "path": "/v1/publisher/tasks", "purpose": "Outstanding compliance/upload tasks (new endpoint if needed)" }
+      ]
+    },
+    {
+      "name": "Reports & Moderation",
+      "summary": "Submit issues on events and review inbound reports for follow-up.",
+      "endpoints": [
+        { "service": "SEE.API", "method": "POST", "path": "/v1/public/reports", "purpose": "Submit a public report for an event" },
+        { "service": "SEE.API", "method": "GET", "path": "/v1/admin/reports", "purpose": "List all reports with filters (status/reason)" },
+        { "service": "SEE.API", "method": "GET", "path": "/v1/admin/reports/{id}", "purpose": "Detailed view & audit trail" },
+        { "service": "SEE.API", "method": "PATCH", "path": "/v1/admin/reports/{id}", "purpose": "Update status/notes when moderators resolve issues" },
+        { "service": "SEE.API", "method": "GET", "path": "/v1/admin/events/{id}", "purpose": "Inspect flagged event details during moderation" }
+      ]
+    }
+  ]
+}
