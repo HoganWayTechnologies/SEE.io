@@ -1,20 +1,28 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import AuthForm from '../components/AuthForm'
+import { useAuth } from '../context/AuthContext'
+import UserMenu from '../components/UserMenu'
+import NotificationBell from '../components/NotificationBell'
 
 type AuthMode = 'signin' | 'signup'
 
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('signin')
-  const [profile, setProfile] = useState<any | null>(null)
+  const auth = useAuth()
 
   return (
     <div>
       {/* Navigation */}
       <nav className="nav">
         <div className="container nav-container">
-          <a href="/" className="nav-brand">SEE.io</a>
+          <Link to="/" className="nav-brand">SEE.io</Link>
           <div className="nav-links">
-            <a href="/discover" className="nav-link">Discover</a>
+            <Link to="/discover" className="nav-link">Discover</Link>
+            <Link to="/saved" className="nav-link">Saved</Link>
+            <Link to="/tickets" className="nav-link">My Tickets</Link>
+            <NotificationBell />
+            <UserMenu />
           </div>
         </div>
       </nav>
@@ -35,10 +43,7 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <AuthForm
-              mode={mode}
-              onSuccess={(data) => setProfile(data || null)}
-            />
+            <AuthForm mode={mode} />
 
             <div style={{ textAlign: 'center', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--gray-200)' }}>
               <p style={{ color: 'var(--gray-600)', marginBottom: '1rem' }}>
@@ -62,16 +67,16 @@ export default function AuthPage() {
           </p>
         </div>
 
-        {profile && (
+        {auth.profile && (
           <div className="card" style={{ marginTop: '1.5rem' }}>
             <div className="card-body" style={{ textAlign: 'center' }}>
               <h3 className="card-title" style={{ marginBottom: '0.5rem' }}>Signed In</h3>
               <p style={{ marginBottom: '0.5rem' }}>
-                {profile.displayName || profile.email || profile.uid}
+                {auth.profile.displayName || auth.profile.email || auth.profile.uid}
               </p>
-              <a href="/" className="btn btn-primary" style={{ width: '100%' }}>
+              <Link to="/" className="btn btn-primary" style={{ width: '100%' }}>
                 Continue to Home
-              </a>
+              </Link>
             </div>
           </div>
         )}

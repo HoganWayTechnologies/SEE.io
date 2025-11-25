@@ -56,3 +56,25 @@ export async function exchangeToFirebase(socxalAccessToken: string) {
   })
   return resp.data // expected { firebaseToken, uid, expires_in }
 }
+
+export async function resetSocxalPassword(email: string) {
+  if (!SOCXAL_BASE) throw new Error('SOCXAL API base URL not configured (NEXT_PUBLIC_SOCXAL_API_URL)')
+  const resp = await axios.post(`${SOCXAL_BASE}/api/Auth/reset-password`, { email })
+  return resp.data
+}
+
+export async function updateSocxalProfile(token: string, payload: { displayName?: string; phoneNumber?: string }) {
+  if (!SOCXAL_BASE) throw new Error('SOCXAL API base URL not configured (NEXT_PUBLIC_SOCXAL_API_URL)')
+  const resp = await axios.post(`${SOCXAL_BASE}/api/Auth/update-profile`, payload, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  return resp.data
+}
+
+export async function logoutAllSocxalSessions(token: string) {
+  if (!SOCXAL_BASE) throw new Error('SOCXAL API base URL not configured (NEXT_PUBLIC_SOCXAL_API_URL)')
+  const resp = await axios.post(`${SOCXAL_BASE}/api/Auth/logout-all`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  return resp.data
+}

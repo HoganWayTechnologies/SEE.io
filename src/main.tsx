@@ -11,25 +11,45 @@ import SettingsPage from './pages/SettingsPage'
 import PreferencesPage from './pages/PreferencesPage'
 import PublisherDashboard from './pages/PublisherDashboard'
 import ReportsPage from './pages/ReportsPage'
+import SavedPage from './pages/SavedPage'
+import TicketsPage from './pages/TicketsPage'
+import InboxPage from './pages/InboxPage'
+import CalendarPage from './pages/CalendarPage'
+import { AuthProvider } from './context/AuthContext'
+import { NotificationProvider } from './context/NotificationContext'
+import MyEventsPage from './pages/MyEventsPage'
+import CreateEventPage from './pages/CreateEventPage'
+import PageBuilderPage from './pages/PageBuilderPage'
 import './styles.css'
 
 function App() {
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/discover" element={<Discover />} />
-          <Route path="/event/:id" element={<EventPage />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/preferences" element={<PreferencesPage />} />
-          <Route path="/publisher" element={<PublisherDashboard />} />
-          <Route path="/reports" element={<ReportsPage />} />
-        </Routes>
-      </BrowserRouter>
-    </ErrorBoundary>
+    <AuthProvider>
+      <NotificationProvider>
+        <ErrorBoundary>
+          <BrowserRouter basename="/">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/discover" element={<Discover />} />
+              <Route path="/event/:id" element={<EventPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/preferences" element={<PreferencesPage />} />
+            <Route path="/publisher" element={<PublisherDashboard />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/saved" element={<SavedPage />} />
+            <Route path="/tickets" element={<TicketsPage />} />
+            <Route path="/inbox" element={<InboxPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/my-events" element={<MyEventsPage />} />
+            <Route path="/publisher/create" element={<CreateEventPage />} />
+            <Route path="/publisher/events/:eventId/page" element={<PageBuilderPage />} />
+          </Routes>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </NotificationProvider>
+    </AuthProvider>
   )
 }
 

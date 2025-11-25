@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content="0; url=/" />
+    <title>SEE.io</title>
+    <script>
+      // Single Page App fallback: push the current path into history and load the SPA
+      (function () {
+        var redirect = location.pathname + location.search + location.hash
+        sessionStorage.setItem('spa_redirect', redirect)
+        window.location.replace('/')
+      })()
+    </script>
+  </head>
+  <body></body>
+</html>

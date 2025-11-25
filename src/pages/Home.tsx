@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import EventGrid from '../components/EventGrid'
 import HomeDiscover from '../components/HomeDiscover'
 import Section from '../components/Section'
 import SectionHeader from '../components/SectionHeader'
+import UserMenu from '../components/UserMenu'
+import NotificationBell from '../components/NotificationBell'
 import { api, Event, formatEventsForDisplay } from '../services/api'
 
 export default function Home() {
@@ -14,22 +17,14 @@ export default function Home() {
     const loadFeaturedEvents = async () => {
       try {
         setLoading(true)
-        // Try to get featured/popular events from API
         const response = await api.searchEvents({ take: 6 })
         const formattedEvents = formatEventsForDisplay(response.items || [])
         setFeaturedEvents(formattedEvents)
       } catch (err) {
         console.error('Failed to load featured events:', err)
-        // Fallback to mock data if API fails
-        setFeaturedEvents([
-          { id: 'demo-1', title: 'Summer Music Festival 2025', date: 'Dec 15, 2025', location: 'Central Park' },
-          { id: 'demo-2', title: 'Tech Conference 2025', date: 'Jan 20, 2026', location: 'Convention Center' },
-          { id: 'demo-3', title: 'Art Exhibition Opening', date: 'Nov 25, 2025', location: 'Modern Art Museum' },
-          { id: 'demo-4', title: 'Food & Wine Festival', date: 'Dec 8, 2025', location: 'Downtown Plaza' },
-          { id: 'demo-5', title: 'Comedy Night Special', date: 'Nov 30, 2025', location: 'Laugh Factory' },
-          { id: 'demo-6', title: 'Photography Workshop', date: 'Dec 12, 2025', location: 'Community Center' }
-        ])
-        setError('Using demo data - API unavailable')
+        // In production, do not silently fall back to mock data—surface the issue
+        setFeaturedEvents([])
+        setError('Events failed to load. Please retry or check API availability.')
       } finally {
         setLoading(false)
       }
@@ -43,13 +38,15 @@ export default function Home() {
       {/* Navigation */}
       <nav className="nav">
         <div className="container nav-container">
-          <a href="/" className="nav-brand">SEE.io</a>
+          <Link to="/" className="nav-brand">SEE.io</Link>
           <div className="nav-links">
-            <a href="/discover" className="nav-link">Discover</a>
-            <a href="/auth" className="btn btn-primary">Sign In</a>
-          </div>
+          <Link to="/discover" className="nav-link">Discover</Link>
+          <Link to="/saved" className="nav-link">Saved</Link>
+          <NotificationBell />
+          <UserMenu />
         </div>
-      </nav>
+      </div>
+    </nav>
 
       {/* Hero Section */}
       <section className="hero">
@@ -57,8 +54,8 @@ export default function Home() {
           <h1>Discover Amazing Events Near You</h1>
           <p>Find and attend the best events in your area. From concerts to workshops, we've got you covered.</p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/discover" className="btn btn-primary">Browse Events</a>
-            <a href="/auth" className="btn btn-secondary">Create Event</a>
+            <Link to="/discover" className="btn btn-primary">Browse Events</Link>
+            <Link to="/auth" className="btn btn-secondary">Create Event</Link>
           </div>
         </div>
       </section>

@@ -6,6 +6,7 @@ interface Event {
   title: string
   date?: string
   location?: string
+  promoted?: boolean
 }
 
 interface EventGridProps {
@@ -23,6 +24,27 @@ export default function EventGrid({
   emptyMessage = "No events found.",
   className = ''
 }: EventGridProps) {
+  const interleavePromoted = (list: Event[]) => {
+    const promoted = list.filter(e => e.promoted)
+    const regular = list.filter(e => !e.promoted)
+    if (!promoted.length) return list
+    const result: Event[] = []
+    let pIndex = 0
+    regular.forEach((evt, idx) => {
+      // insert a promoted event at the start and then every 4 items if available
+      if ((idx === 0 || idx % 4 === 0) && pIndex < promoted.length) {
+        result.push(promoted[pIndex++])
+      }
+      result.push(evt)
+    })
+    while (pIndex < promoted.length) {
+      result.push(promoted[pIndex++])
+    }
+    return result
+  }
+
+  const displayEvents = interleavePromoted(events)
+
   if (loading) {
     return (
       <div className={`event-grid-loading ${className}`}>
@@ -73,13 +95,14 @@ export default function EventGrid({
 
   return (
     <div className={`event-grid ${className}`}>
-      {events.map((event) => (
+      {displayEvents.map((event) => (
         <EventCard
           key={event.id}
           id={event.id}
           title={event.title}
           date={event.date}
           location={event.location}
+          promoted={event.promoted}
         />
       ))}
     </div>

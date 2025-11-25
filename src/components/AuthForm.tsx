@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { socxalLogin, socxalRegister, exchangeToFirebase } from '../../lib/socxal'
 import { api } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 type AuthMode = 'signin' | 'signup'
 
@@ -10,23 +11,13 @@ interface AuthFormProps {
   className?: string
 }
 
-const saveProfileLocally = (profile: any, idToken: string) => {
-  if (typeof window === 'undefined') return
-  try {
-    window.localStorage.setItem('seeProfile', JSON.stringify(profile || null))
-    window.localStorage.setItem('seeIdToken', idToken || '')
-  } catch {
-    // ignore quota errors
-  }
-}
-
 export default function AuthForm({ mode, onSuccess, className = '' }: AuthFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [profile, setProfile] = useState<any | null>(null)
+  const auth = useAuth()
 
   useEffect(() => {
     setError(null)
@@ -49,10 +40,30 @@ export default function AuthForm({ mode, onSuccess, className = '' }: AuthFormPr
       const firebaseIdToken = exchange?.firebaseToken || exchange?.idToken
       if (!firebaseIdToken) throw new Error('Exchange to Firebase failed')
 
-      const seeProfile = await api.fetchProfile(firebaseIdToken)
-      setProfile(seeProfile)
-      saveProfileLocally(seeProfile, firebaseIdToken)
-      onSuccess?.(seeProfile)
+      const seeProfileResponse = await api.fetchProfile(firebaseIdToken)
+      const aggregatedProfile = {
+        ...seeProfileResponse,
+        uid: seeProfileResponse?.uid
+          || seeProfileResponse?.id
+          || seeProfileResponse?.userId
+          || exchange?.uid
+          || resp.raw?.localId
+          || resp.raw?.uid
+          || resp.user?.id
+      }
+
+      try {
+        await fetch('/api/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: firebaseIdToken })
+        })
+      } catch (sessionErr) {
+        console.warn('Session cookie setup failed (optional):', sessionErr)
+      }
+
+      auth.signIn(aggregatedProfile, firebaseIdToken, accessToken)
+      onSuccess?.(aggregatedProfile)
     } catch (err: any) {
       setError(err?.message || 'Authentication failed')
     } finally {
@@ -62,22 +73,26 @@ export default function AuthForm({ mode, onSuccess, className = '' }: AuthFormPr
 
   const handleSignOut = async () => {
     // No Firebase session to revoke when using direct ID tokens
-    setProfile(null)
-    saveProfileLocally(null, '')
+    try {
+      await fetch('/api/session', { method: 'DELETE' })
+    } catch (sessionErr) {
+      console.warn('Session delete failed (optional):', sessionErr)
+    }
+    auth.signOut()
     onSuccess?.(null)
   }
 
-  if (profile) {
+  if (auth.profile) {
     return (
       <div className={`auth-form ${className}`}>
         <div className="card">
           <div className="card-body" style={{ textAlign: 'center' }}>
             <h3 className="card-title">Signed in</h3>
             <p style={{ marginTop: '0.5rem' }}>
-              {profile.displayName || profile.email || 'Authenticated user'}
+              {auth.profile.displayName || auth.profile.email || 'Authenticated user'}
             </p>
-            {profile.email && (
-              <p style={{ fontSize: '0.9rem', color: 'var(--gray-600)' }}>{profile.email}</p>
+            {auth.profile.email && (
+              <p style={{ fontSize: '0.9rem', color: 'var(--gray-600)' }}>{auth.profile.email}</p>
             )}
             <button className="btn btn-secondary" style={{ width: '100%', marginTop: '1rem' }} onClick={handleSignOut}>
               Sign out

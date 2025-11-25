@@ -1,4 +1,9 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { updateSocxalProfile, resetSocxalPassword, logoutAllSocxalSessions } from '../../lib/socxal'
+import { useAuth } from '../context/AuthContext'
+import UserMenu from '../components/UserMenu'
+import NotificationBell from '../components/NotificationBell'
 
 const notificationOptions = [
   { label: 'Email me when events I follow are updated', key: 'followedUpdates', enabled: true },
@@ -7,16 +12,76 @@ const notificationOptions = [
 ]
 
 export default function SettingsPage() {
+  const auth = useAuth()
+  const [displayName, setDisplayName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [status, setStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+        setDisplayName(auth.profile?.displayName || '')
+        setEmail(auth.profile?.email || '')
+  }, [auth.profile])
+
+  const handleProfileSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const token = auth.socxalToken
+    if (!token) {
+      setStatus('Please sign in to update profile information.')
+      return
+    }
+    try {
+      setStatus('Saving profile...')
+      await updateSocxalProfile(token, { displayName, phoneNumber: phone })
+      setStatus('Profile updated!')
+    } catch (err: any) {
+      setStatus(err?.message || 'Failed to update profile')
+    }
+  }
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setStatus('Add an email address before resetting password.')
+      return
+    }
+    try {
+      setStatus('Sending reset email...')
+      await resetSocxalPassword(email)
+      setStatus('Password reset email sent.')
+    } catch (err: any) {
+      setStatus(err?.message || 'Failed to trigger reset email')
+    }
+  }
+
+  const handleLogoutAll = async () => {
+    const token = auth.socxalToken
+    if (!token) {
+      setStatus('Please sign in to log out other sessions.')
+      return
+    }
+    try {
+      setStatus('Logging out all sessions...')
+      await logoutAllSocxalSessions(token)
+      setStatus('All sessions cleared.')
+    } catch (err: any) {
+      setStatus(err?.message || 'Failed to log out sessions')
+    }
+  }
+
   return (
     <div>
       <nav className="nav">
         <div className="container nav-container">
-          <a href="/" className="nav-brand">SEE.io</a>
+          <Link to="/" className="nav-brand">SEE.io</Link>
           <div className="nav-links">
-            <a href="/discover" className="nav-link">Discover</a>
-            <a href="/profile" className="nav-link">Profile</a>
-            <a href="/settings" className="nav-link active">Settings</a>
-            <a href="/preferences" className="nav-link">Preferences</a>
+            <Link to="/discover" className="nav-link">Discover</Link>
+            <Link to="/profile" className="nav-link">Profile</Link>
+            <Link to="/settings" className="nav-link active">Settings</Link>
+            <Link to="/preferences" className="nav-link">Preferences</Link>
+            <Link to="/saved" className="nav-link">Saved</Link>
+            <Link to="/tickets" className="nav-link">My Tickets</Link>
+            <NotificationBell />
+            <UserMenu />
           </div>
         </div>
       </nav>
@@ -25,7 +90,7 @@ export default function SettingsPage() {
         <header style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>Account Settings</h1>
           <p style={{ color: 'var(--gray-600)' }}>
-            Eventually this form will drive `/v1/users/{id}`, `/v1/users/{id}/preferences`, Socxal `/api/Auth/update-profile`,
+            Eventually this form will drive `/v1/users/{'{' }id{'}'}`, `/v1/users/{'{' }id{'}'}/preferences`, Socxal `/api/Auth/update-profile`,
             and session endpoints for password/email changes. For now, it's illustrative.
           </p>
         </header>
@@ -33,21 +98,22 @@ export default function SettingsPage() {
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <div className="card-body">
             <h3 className="card-title">Profile Details</h3>
-            <form style={{ display: 'grid', gap: '1rem' }}>
+            <form style={{ display: 'grid', gap: '1rem' }} onSubmit={handleProfileSave}>
               <div>
                 <label className="form-label">Display Name</label>
-                <input className="form-input" defaultValue="Jordan Daniels" />
+                <input className="form-input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
               </div>
               <div>
                 <label className="form-label">Contact Email</label>
-                <input className="form-input" defaultValue="jordan@example.com" />
+                <input className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div>
                 <label className="form-label">Phone (optional)</label>
-                <input className="form-input" placeholder="+1 (555) 010-2030" />
+                <input className="form-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 010-2030" />
               </div>
-              <button className="btn btn-primary" type="button">Save Changes</button>
+              <button className="btn btn-primary" type="submit">Save Changes</button>
             </form>
+            {status && <p style={{ marginTop: '0.5rem', color: 'var(--gray-600)' }}>{status}</p>}
           </div>
         </div>
 
@@ -73,9 +139,8 @@ export default function SettingsPage() {
             <h3 className="card-title">Security</h3>
             <p>Use Socxal `/api/Auth/signIn`, `/api/Auth/reset-password`, and Firebase session endpoints to power these actions.</p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-secondary" type="button">Change Password</button>
-              <button className="btn btn-secondary" type="button">Enable MFA</button>
-              <button className="btn btn-secondary" type="button">Review Login History</button>
+              <button className="btn btn-secondary" type="button" onClick={handleResetPassword}>Change Password</button>
+              <button className="btn btn-secondary" type="button" onClick={handleLogoutAll}>Log out all sessions</button>
             </div>
           </div>
         </div>

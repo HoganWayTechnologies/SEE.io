@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import EventGrid from '../components/EventGrid'
+import UserMenu from '../components/UserMenu'
+import NotificationBell from '../components/NotificationBell'
 import { api, Event, formatEventsForDisplay, SearchParams } from '../services/api'
 
 type FilterState = {
@@ -8,8 +11,8 @@ type FilterState = {
   status: string
   enableDiscovery: boolean
   forceDiscover: boolean
-  lat: string
-  lon: string
+  city: string
+  state: string
   radiusKm: string
 }
 
@@ -19,8 +22,8 @@ const defaultFilters: FilterState = {
   status: 'active,planning',
   enableDiscovery: true,
   forceDiscover: false,
-  lat: '',
-  lon: '',
+  city: '',
+  state: '',
   radiusKm: '50'
 }
 
@@ -49,8 +52,8 @@ export default function Discover() {
     }
     if (activeFilters.category && activeFilters.category !== 'All') params.category = activeFilters.category
     if (activeFilters.date) params.date = activeFilters.date
-    if (activeFilters.lat) params.lat = Number(activeFilters.lat)
-    if (activeFilters.lon) params.lon = Number(activeFilters.lon)
+    if (activeFilters.city) params.city = activeFilters.city
+    if (activeFilters.state) params.state = activeFilters.state
     if (activeFilters.radiusKm) params.radiusKm = Number(activeFilters.radiusKm)
     return { ...params, ...overrides }
   }
@@ -111,24 +114,26 @@ export default function Discover() {
       {/* Navigation */}
       <nav className="nav">
         <div className="container nav-container">
-          <a href="/" className="nav-brand">SEE.io</a>
+          <Link to="/" className="nav-brand">SEE.io</Link>
           <div className="nav-links">
-            <a href="/discover" className="nav-link">Discover</a>
-            <a href="/auth" className="btn btn-primary">Sign In</a>
-          </div>
+          <Link to="/discover" className="nav-link active">Discover</Link>
+          <Link to="/saved" className="nav-link">Saved</Link>
+          <NotificationBell />
+          <UserMenu />
         </div>
+      </div>
       </nav>
 
       {/* Page Content */}
-      <div className="container" style={{ padding: '2rem 0' }}>
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2.25rem', fontWeight: '700', color: 'var(--gray-900)', marginBottom: '0.5rem' }}>
-            Discover Events
-          </h1>
-          <p style={{ color: 'var(--gray-600)', fontSize: '1.125rem' }}>
-            Find the perfect event for you
-          </p>
-        </div>
+        <div className="container" style={{ padding: '2rem 0' }}>
+          <div style={{ marginBottom: '2rem' }}>
+            <h1 style={{ fontSize: '2.25rem', fontWeight: '700', color: 'var(--gray-900)', marginBottom: '0.5rem' }}>
+              Discover Events
+            </h1>
+            <p style={{ color: 'var(--gray-600)', fontSize: '1.125rem' }}>
+              Find the perfect event for you
+            </p>
+          </div>
 
         {/* Search + filter controls */}
         <form onSubmit={handleSearchSubmit} className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
@@ -210,21 +215,21 @@ export default function Discover() {
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <div style={{ flex: 1 }}>
-                  <label className="form-label">Latitude</label>
+                  <label className="form-label">City</label>
                   <input
                     className="form-input"
-                    value={draftFilters.lat}
-                    onChange={(e) => handleFilterChange('lat', e.target.value)}
-                    placeholder="30.2672"
+                    value={draftFilters.city}
+                    onChange={(e) => handleFilterChange('city', e.target.value)}
+                    placeholder="Austin"
                   />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label className="form-label">Longitude</label>
+                  <label className="form-label">State</label>
                   <input
                     className="form-input"
-                    value={draftFilters.lon}
-                    onChange={(e) => handleFilterChange('lon', e.target.value)}
-                    placeholder="-97.7431"
+                    value={draftFilters.state}
+                    onChange={(e) => handleFilterChange('state', e.target.value)}
+                    placeholder="TX"
                   />
                 </div>
               </div>

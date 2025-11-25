@@ -348,6 +348,12 @@ body {
   color: #047857;
 }
 
+.badge-promoted {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #b45309;
+  font-size: 0.75rem;
+}
+
 
 /* Sections */
 .section {
@@ -411,6 +417,86 @@ body {
 
 .nav-link:hover {
   color: var(--primary-blue);
+}
+
+.nav-link.active {
+  color: var(--primary-blue);
+}
+
+.user-menu {
+  position: relative;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background-color: var(--primary-blue);
+  color: var(--white);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 0.75rem;
+  min-width: 220px;
+  box-shadow: var(--shadow-lg);
+  padding: 0.75rem 0;
+  z-index: 100;
+}
+
+.user-menu-header {
+  padding: 0 1rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--gray-100);
+  margin-bottom: 0.5rem;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.user-email {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.user-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--gray-700);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.user-menu-item:hover {
+  background-color: var(--gray-50);
+  color: var(--primary-blue);
+}
+
+.bell-icon {
+  position: relative;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
 }
 
 /* Forms */

@@ -5,9 +5,18 @@
     "description": "Compact JSON catalog of endpoints, params, auth requirements and request/response schemas for the frontend"
   },
   "servers": [
-    { "url": "https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SEEAPI/", "description": "azure-deployment" },
-    { "url": "https://localhost:7108", "description": "local-https" },
-    { "url": "http://localhost:5154", "description": "local-http" }
+    {
+      "url": "http://seeapi-gddfekhvdkg2fcca.scm.eastus2-01.azurewebsites.net/",
+      "description": "azure-deployment"
+    },
+    {
+      "url": "https://localhost:7108",
+      "description": "local-https"
+    },
+    {
+      "url": "http://localhost:5154",
+      "description": "local-http"
+    }
   ],
   "endpoints": [
     {
@@ -16,21 +25,91 @@
       "auth": "anonymous (rate-limited public policy)",
       "description": "Search public events. Accepts geo, text, and address hints; DB-first then discovery fallback.",
       "queryParams": [
-        { "name": "lat", "type": "number", "required": false },
-        { "name": "lng", "type": "number", "required": false, "note": "alias for lon" },
-        { "name": "lon", "type": "number", "required": false, "note": "alias for lng" },
-        { "name": "distanceKm", "type": "integer", "required": false, "note": "alias for radiusKm" },
-        { "name": "radiusKm", "type": "integer", "required": false, "note": "alias for distanceKm" },
-        { "name": "startUtc", "type": "string (date-time)", "required": false },
-        { "name": "category", "type": "string", "required": false },
-        { "name": "q", "type": "string", "required": false },
-        { "name": "city", "type": "string", "required": false, "note": "address hint - will geocode if lat/lon missing" },
-        { "name": "state", "type": "string", "required": false, "note": "address hint - will geocode if lat/lon missing" },
-        { "name": "venue", "type": "string", "required": false, "note": "address hint - will geocode if lat/lon missing" },
-        { "name": "take", "type": "integer", "required": false, "default": 50 },
-        { "name": "pageToken", "type": "string", "required": false },
-        { "name": "enableDiscovery", "type": "boolean", "required": false, "default": true },
-        { "name": "forceDiscover", "type": "boolean", "required": false, "default": false }
+        {
+          "name": "lat",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "lng",
+          "type": "number",
+          "required": false,
+          "note": "alias for lon"
+        },
+        {
+          "name": "lon",
+          "type": "number",
+          "required": false,
+          "note": "alias for lng"
+        },
+        {
+          "name": "distanceKm",
+          "type": "integer",
+          "required": false,
+          "note": "alias for radiusKm"
+        },
+        {
+          "name": "radiusKm",
+          "type": "integer",
+          "required": false,
+          "note": "alias for distanceKm"
+        },
+        {
+          "name": "startUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "required": false,
+          "note": "address hint - will geocode if lat/lon missing"
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": false,
+          "note": "address hint - will geocode if lat/lon missing"
+        },
+        {
+          "name": "venue",
+          "type": "string",
+          "required": false,
+          "note": "address hint - will geocode if lat/lon missing"
+        },
+        {
+          "name": "take",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "enableDiscovery",
+          "type": "boolean",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "forceDiscover",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
       ],
       "responses": {
         "200": {
@@ -40,15 +119,51 @@
             "nextPageToken": "string | null"
           }
         },
-        "429": { "description": "Rate limited" }
+        "429": {
+          "description": "Rate limited"
+        }
       }
     },
     {
       "path": "/v1/public/events/{id}",
       "method": "GET",
       "auth": "anonymous",
-      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
-      "responses": { "200": { "schema": "EventResponse" }, "404": { "description": "NotFound" } }
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventResponse"
+        },
+        "404": {
+          "description": "NotFound"
+        }
+      }
+    },
+    {
+      "path": "/v1/public/events/{id}/share",
+      "method": "GET",
+      "auth": "anonymous",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "id": "string",
+            "shareUrl": "string"
+          }
+        },
+        "404": {}
+      }
     },
     {
       "path": "/v1/events",
@@ -56,23 +171,97 @@
       "auth": "anonymous",
       "description": "Advanced search with geo and text branches. DB-first, discovery fallback, re-query and return discovered results.",
       "queryParams": [
-        { "name": "q", "type": "string", "required": false },
-        { "name": "status", "type": "string", "required": false, "note": "comma-separated; default active,planning" },
-        { "name": "category", "type": "string", "required": false },
-        { "name": "city", "type": "string", "required": false },
-        { "name": "state", "type": "string", "required": false },
-        { "name": "venue", "type": "string", "required": false },
-        { "name": "lat", "type": "number", "required": false },
-        { "name": "lon", "type": "number", "required": false },
-        { "name": "lng", "type": "number", "required": false, "note": "alias for lon" },
-        { "name": "radiusKm", "type": "integer", "required": false },
-        { "name": "distanceKm", "type": "integer", "required": false, "note": "alias for radiusKm" },
-        { "name": "fromUtc", "type": "string (date-time)", "required": false },
-        { "name": "toUtc", "type": "string (date-time)", "required": false },
-        { "name": "pageSize", "type": "integer", "required": false, "default": 20 },
-        { "name": "pageToken", "type": "string", "required": false },
-        { "name": "enableDiscovery", "type": "boolean", "required": false, "default": true },
-        { "name": "forceDiscover", "type": "boolean", "required": false, "default": false }
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "note": "comma-separated; default active,planning; use attending to pull the signed-in user's RSVPs"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "venue",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "lat",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "lon",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "lng",
+          "type": "number",
+          "required": false,
+          "note": "alias for lon"
+        },
+        {
+          "name": "radiusKm",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "name": "distanceKm",
+          "type": "integer",
+          "required": false,
+          "note": "alias for radiusKm"
+        },
+        {
+          "name": "fromUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "toUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "enableDiscovery",
+          "type": "boolean",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "forceDiscover",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
       ],
       "responses": {
         "200": {
@@ -91,135 +280,2191 @@
       "path": "/v1/events/{id}",
       "method": "GET",
       "auth": "anonymous",
-      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
-      "responses": { "200": { "schema": "EventDto" }, "404": { "description": "NotFound" } }
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventDto"
+        },
+        "404": {
+          "description": "NotFound"
+        }
+      }
     },
     {
       "path": "/v1/categories",
       "method": "GET",
       "auth": "anonymous",
-      "responses": { "200": { "description": "Array of categories", "schema": "CategoryItem[]" } }
+      "responses": {
+        "200": {
+          "description": "Array of categories",
+          "schema": "CategoryItem[]"
+        }
+      }
     },
     {
       "path": "/v1/public/reports",
       "method": "POST",
       "auth": "API key (x-api-key)",
-      "body": { "schema": "ReportEventRequest" },
-      "responses": { "202": { "schema": { "id": "string" } }, "401": { "description": "Unauthorized" } }
+      "body": {
+        "schema": "ReportEventRequest"
+      },
+      "responses": {
+        "202": {
+          "schema": {
+            "id": "string"
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
     },
     {
       "path": "/v1/publisher/events",
       "method": "POST",
       "auth": "Bearer (Publisher)",
-      "body": { "schema": "CreateEventRequest" },
-      "responses": { "201": { "schema": { "id": "string" }, "headers": { "Location": "string" } }, "401": {}, "403": {} }
+      "body": {
+        "schema": "CreateEventRequest"
+      },
+      "responses": {
+        "201": {
+          "schema": {
+            "id": "string"
+          },
+          "headers": {
+            "Location": "string"
+          }
+        },
+        "401": {},
+        "403": {}
+      }
     },
     {
       "path": "/v1/publisher/events/{id}",
       "method": "PUT",
       "auth": "Bearer (Publisher)",
-      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
-      "body": { "schema": "UpdateEventRequest" },
-      "responses": { "204": {}, "401": {}, "403": {}, "404": {} }
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateEventRequest"
+      },
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
     },
     {
       "path": "/v1/publisher/events/{id}/publish",
       "method": "POST",
       "auth": "Bearer (Publisher)",
-      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
-      "responses": { "200": {}, "404": {} }
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {},
+        "404": {}
+      }
     },
     {
       "path": "/v1/publisher/events/{id}/cancel",
       "method": "POST",
       "auth": "Bearer (Publisher)",
-      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
-      "responses": { "200": {} }
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/promotion",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPromotionStatusResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/discounts",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventDiscountDto[]"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/discounts",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "EventDiscountRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "EventDiscountDto"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/discounts/{discountId}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true },
+        { "name": "discountId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "EventDiscountRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventDiscountDto"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/discounts/{discountId}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true },
+        { "name": "discountId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/media",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List uploaded event media assets used by the page builder (images, files).",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "queryParams": [
+        { "name": "purpose", "type": "string", "required": false, "description": "Filter by logical purpose (background, gallery, general)." }
+      ],
+      "responses": {
+        "200": { "schema": "EventMediaItemResponse[]" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/media",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Upload a media asset via multipart/form-data that can be referenced by builder blocks.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "consumes": [
+        "multipart/form-data"
+      ],
+      "notes": "Accepts file plus optional purposes[] form fields indicating background/gallery usage.",
+      "responses": {
+        "201": { "schema": "EventMediaItemResponse" },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/media/{mediaId}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Update metadata for a media asset (purposes/tags) without re-uploading.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true },
+        { "name": "mediaId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "UpdateEventMediaRequest",
+        "required": true
+      },
+      "responses": {
+        "200": { "schema": "EventMediaItemResponse" },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/media/{mediaId}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Delete an uploaded media asset and its backing blob.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true },
+        { "name": "mediaId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return draft and published WYSIWYG builder payloads for the event page.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "PublisherEventPageResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/catalog",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return builder limits, available block types, preset backgrounds, and uploaded media assets for the editor UI.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "PageBuilderCatalogResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Replace the draft WYSIWYG layout for an event. Requires full payload and optional revision concurrency token.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "SaveEventPageRequest",
+        "required": true
+      },
+      "responses": {
+        "200": { "schema": "EventPageVersionResponse" },
+        "400": {},
+        "404": {},
+        "409": { "description": "revision conflict" }
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/publish",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Publish the current draft layout so the public frontend renders the new content.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "PublishEventPageRequest",
+        "required": true
+      },
+      "responses": {
+        "200": { "schema": "EventPageVersionResponse" },
+        "400": {},
+        "404": {},
+        "409": { "description": "revision conflict" }
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/preview",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Generate a short-lived preview token so the frontend can render the current draft without publishing.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "EventPagePreviewTokenRequest",
+        "required": false
+      },
+      "responses": {
+        "200": { "schema": "EventPagePreviewTokenResponse" },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/history",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return the last 20 published versions of the WYSIWYG event page for auditing/rollback.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "EventPageHistoryResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/history/{versionId}/restore",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Restore a historical version to the draft (optionally publishing immediately).",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true },
+        { "name": "versionId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "RestoreEventPageRequest",
+        "required": false
+      },
+      "responses": {
+        "200": { "schema": "EventPageVersionResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/draft",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Discard the current draft and fall back to the latest published version (if any).",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "PublisherEventPageResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/preview/{token}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Revoke a previously generated preview token.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true },
+        { "name": "token", "type": "string", "required": true }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/usage",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return summary counts for block types and media references across draft/published payloads.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "EventPageUsageResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/promotion",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "EventPromotionRequest"
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPromotionStatusResponse"
+        },
+        "400": { "description": "invalid budget/goal combination" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/promotion",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/moderation",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": {
+          "schema": "ModerationStatusResponse"
+        },
+        "404": {}
+      }
     },
     {
       "path": "/v1/admin/events/{id}/verify",
       "method": "POST",
       "auth": "Bearer (Admin role=admin)",
-      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
-      "queryParams": [ { "name": "v", "type": "boolean", "default": true } ],
-      "responses": { "200": {}, "401": {}, "403": {}, "404": {} }
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "v",
+          "type": "boolean",
+          "default": true
+        }
+      ],
+      "responses": {
+        "200": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
     },
     {
       "path": "/v1/admin/events/{id}/hide",
       "method": "POST",
       "auth": "Bearer (Admin role=admin)",
-      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
-      "responses": { "200": {}, "404": {} }
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {},
+        "404": {}
+      }
     },
     {
       "path": "/api/v1/admin/keys",
       "method": "POST",
       "auth": "API key (admin role required)",
-      "body": { "schema": "CreateKeyRequest", "required": false },
-      "responses": { "200": { "schema": "CreateKeyResponse" } }
+      "body": {
+        "schema": "CreateKeyRequest",
+        "required": false
+      },
+      "responses": {
+        "200": {
+          "schema": "CreateKeyResponse"
+        }
+      }
     },
     {
       "path": "/api/v1/admin/keys/{id}/revoke",
       "method": "POST",
       "auth": "API key (admin role required)",
-      "pathParams": [ { "name": "id", "type": "string", "required": true } ],
-      "responses": { "204": {} }
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {}
+      }
     },
     {
       "path": "/WeatherForecast",
       "method": "GET",
       "auth": "anonymous",
-      "responses": { "200": { "schema": "WeatherForecast[]" } }
-    }
-    ,
+      "responses": {
+        "200": {
+          "schema": "WeatherForecast[]"
+        }
+      }
+    },
     {
-      "path": "/admin/auth/me",
+      "path": "/v1/auth/me",
       "method": "GET",
       "auth": "Bearer (Firebase ID token)",
       "description": "Return the current authenticated user's mapped profile from SEE (uid, email, displayName, socxalId)",
-      "responses": { "200": { "schema": "UserProfile" }, "401": { "description": "Unauthorized" } }
+      "responses": {
+        "200": {
+          "schema": "UserProfile"
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
     },
     {
       "path": "/v1/auth/link-socxal",
       "method": "POST",
       "auth": "Bearer (Firebase ID token)",
       "description": "Link the currently authenticated user's account to a Socxal id (idempotent).",
-      "body": { "schema": "LinkSocxalRequest", "required": true },
-      "responses": { "200": { "schema": { "uid": "string", "socxalId": "string" } }, "401": { "description": "Unauthorized" } }
+      "body": {
+        "schema": "LinkSocxalRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": {
+            "uid": "string",
+            "socxalId": "string"
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
     },
     {
       "path": "/v1/admin/claims/{userId}",
       "method": "GET",
       "auth": "Bearer (Admin role=admin)",
       "description": "Get DB-stored claims for a user. userId may be Firebase UID or SocxalId.",
-      "pathParams": [ { "name": "userId", "type": "string", "required": true } ],
-      "responses": { "200": { "schema": "ClaimsMap" }, "401": {}, "403": {} }
+      "pathParams": [
+        {
+          "name": "userId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "ClaimsMap"
+        },
+        "401": {},
+        "403": {}
+      }
     },
     {
       "path": "/v1/admin/claims/{userId}",
       "method": "PUT",
       "auth": "Bearer (Admin role=admin)",
       "description": "Replace all claims for a user (upsert).",
-      "pathParams": [ { "name": "userId", "type": "string", "required": true } ],
-      "body": { "schema": "ClaimsMap", "required": true },
-      "responses": { "204": {}, "401": {}, "403": {} }
+      "pathParams": [
+        {
+          "name": "userId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "ClaimsMap",
+        "required": true
+      },
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
     },
     {
       "path": "/v1/admin/claims/{userId}",
       "method": "PATCH",
       "auth": "Bearer (Admin role=admin)",
       "description": "Merge/update specific claim keys for a user.",
-      "pathParams": [ { "name": "userId", "type": "string", "required": true } ],
-      "body": { "schema": "ClaimsMap", "required": true },
-      "responses": { "204": {}, "401": {}, "403": {} }
+      "pathParams": [
+        {
+          "name": "userId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "ClaimsMap",
+        "required": true
+      },
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
     },
     {
       "path": "/v1/admin/claims/{userId}/{claimKey}",
       "method": "DELETE",
       "auth": "Bearer (Admin role=admin)",
       "description": "Remove a single claim for a user.",
-      "pathParams": [ { "name": "userId", "type": "string", "required": true }, { "name": "claimKey", "type": "string", "required": true } ],
-      "responses": { "204": {}, "401": {}, "403": {} }
+      "pathParams": [
+        {
+          "name": "userId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "claimKey",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-sources",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List configured scraping sources for discovery.",
+      "responses": {
+        "200": {
+          "schema": "EventSourceConfig[]"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-sources",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Create a new event source configuration.",
+      "body": {
+        "schema": "EventSourceConfig",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "EventSourceConfig"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-sources/{id}",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Fetch a specific event source configuration.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventSourceConfig"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-sources/{id}",
+      "method": "PUT",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Upsert an event source configuration.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "EventSourceConfig",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventSourceConfig"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-sources/{id}",
+      "method": "DELETE",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Remove an event source configuration.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/deals/groupon",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Retrieve the current Groupon ingestion configuration (intervals, keywords, markets).",
+      "responses": {
+        "200": { "schema": "GrouponDealConfig" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/deals/groupon",
+      "method": "PUT",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Replace the Groupon ingestion configuration (intervals, keywords, markets).",
+      "body": {
+        "schema": "GrouponDealConfig",
+        "required": true
+      },
+      "responses": {
+        "200": { "schema": "GrouponDealConfig" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/html-scrapers",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List configured HTML scrapers that power custom discovery sources.",
+      "responses": {
+        "200": { "schema": "HtmlScraperConfig[]" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/html-scrapers/{id}",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "HtmlScraperConfig" },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/html-scrapers",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Create a new HTML scraper definition (XPath selectors).",
+      "body": {
+        "schema": "HtmlScraperConfig",
+        "required": true
+      },
+      "responses": {
+        "201": { "schema": "HtmlScraperConfig" },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/html-scrapers/{id}",
+      "method": "PUT",
+      "auth": "Bearer (Admin role=admin)",
+      "body": {
+        "schema": "HtmlScraperConfig",
+        "required": true
+      },
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "HtmlScraperConfig" },
+        "400": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/html-scrapers/{id}",
+      "method": "DELETE",
+      "auth": "Bearer (Admin role=admin)",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/ingestion-plans",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List ingestion plans used by workers to schedule CSE/ICS runs.",
+      "responses": {
+        "200": {
+          "schema": "IngestionPlan[]"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/ingestion-plans",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "body": {
+        "schema": "IngestionPlan",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "IngestionPlan"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/ingestion-plans/{id}",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "IngestionPlan"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/ingestion-plans/{id}",
+      "method": "PUT",
+      "auth": "Bearer (Admin role=admin)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "IngestionPlan",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "IngestionPlan"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/ingestion-plans/{id}",
+      "method": "DELETE",
+      "auth": "Bearer (Admin role=admin)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/sessions",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List active sessions/devices for a SEE user; owners can view their own sessions, admins can scope by id.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserSessionsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/saved",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Return the user's saved/bookmarked events.",
+      "queryParams": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "SavedEventsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/saved/{eventId}",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Save/bookmark an event for the user.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/saved/{eventId}",
+      "method": "DELETE",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Remove a saved/bookmarked event.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/notifications",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List notifications for the user.",
+      "queryParams": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "includeRead",
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "NotificationsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/notifications/{notificationId}",
+      "method": "PATCH",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Mark a notification read/dismissed.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "notificationId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateNotificationRequest",
+        "required": true
+      },
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/tickets",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List tickets the user owns.",
+      "queryParams": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserTicketsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/tickets/{ticketId}",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Get ticket details/QR.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "TicketDetailResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/tickets/{ticketId}/transfer",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Transfer a ticket to another user.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "TransferTicketRequest",
+        "required": true
+      },
+      "responses": {
+        "202": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/events",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List user events by role (attendee or organizer).",
+      "queryParams": [
+        {
+          "name": "role",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserEventsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/calendar.ics",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "iCal feed of saved/attending events.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "text/calendar"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}",
+      "method": "PATCH",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Update SEE-managed profile fields (display name/contact info).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateUserProfileRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "UserProfile"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/preferences",
+      "method": "PUT",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Replace notification and discovery preferences in a single payload.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UserPreferences",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "UserPreferences"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/preferences",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Fetch preferences, creating defaults if missing.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserPreferences"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/preferences/categories",
+      "method": "PUT",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Save favorite categories used for discovery chips.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "CategoryPreferencesRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "UserPreferences"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/preferences/locations",
+      "method": "PUT",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Persist saved search locations and radius maps.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "LocationPreferencesRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "UserPreferences"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/photo",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Upload or replace the user's profile photo (multipart/form-data with file field).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "photoUrl": "string"
+          }
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/ratings",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List ratings for an event plus summary stats.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventRatingSummary"
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/ratings",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Submit or update the signed-in user's rating for an event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "SubmitEventRatingRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventRatingResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/ratings/me",
+      "method": "DELETE",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Remove the signed-in user's rating for the event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List organizer events with filters for the Publisher Dashboard.",
+      "queryParams": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "note": "comma-separated filter e.g. draft,published"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "fromUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "toUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PublisherEventListResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/images",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Upload hero or gallery imagery for an event.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UploadEventImageRequest",
+        "required": true,
+        "note": "multipart/form-data with file plus variant"
+      },
+      "responses": {
+        "202": {
+          "description": "Upload accepted"
+        },
+        "400": {
+          "description": "Validation"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/stats",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Event level metrics for tickets, views, favorites, and reports.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventStatsResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/tasks",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Outstanding compliance or upload tasks for the organizer dashboard.",
+      "responses": {
+        "200": {
+          "schema": "PublisherTaskListResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/reports",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List inbound reports with filters for moderation triage.",
+      "queryParams": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "note": "comma-separated status filter"
+        },
+        {
+          "name": "reason",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "assignedTo",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PagedAdminReportSummary"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/reports/{id}",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Detailed report view including audit timeline.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "AdminReportDetail"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/reports/{id}",
+      "method": "PATCH",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Update report status, notes, or assignment during moderation.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateReportStatusRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "AdminReportDetail"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/events/{id}",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Inspect flagged event details during moderation workflows.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "AdminEventDetail"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/admin/auth/me",
+      "method": "GET",
+      "service": "SocxalAPI",
+      "auth": "Bearer (Socxal token)",
+      "description": "Primary identity payload (uid, email, linked Socxal id, roles) for Profile Overview.",
+      "responses": {
+        "200": {
+          "schema": "SocxalIdentity"
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
+    },
+    {
+      "path": "/api/Auth/reset-password",
+      "method": "POST",
+      "service": "SocxalAPI",
+      "auth": "Bearer (Socxal token)",
+      "description": "Trigger password reset email via Socxal.",
+      "body": {
+        "schema": "SocxalResetPasswordRequest",
+        "required": true
+      },
+      "responses": {
+        "202": {
+          "description": "Reset email scheduled"
+        },
+        "404": {
+          "description": "User not found"
+        }
+      }
+    },
+    {
+      "path": "/api/Auth/update-profile",
+      "method": "POST",
+      "service": "SocxalAPI",
+      "auth": "Bearer (Socxal token)",
+      "description": "Sync display name or phone to Socxal.",
+      "body": {
+        "schema": "SocxalUpdateProfileRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "SocxalIdentity"
+        },
+        "400": {
+          "description": "Validation"
+        },
+        "401": {}
+      }
+    },
+    {
+      "path": "/api/Auth/logout-all",
+      "method": "POST",
+      "service": "SocxalAPI",
+      "auth": "Bearer (Socxal token)",
+      "description": "End all active Socxal sessions/devices.",
+      "responses": {
+        "202": {
+          "description": "Logout broadcasted"
+        },
+        "401": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List ticket types available for a public event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "TicketTypeResponse[]"
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{id}/page",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Return the published WYSIWYG layout for rendering the event page, or pass previewToken to render an unpublished draft.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "queryParams": [
+        {
+          "name": "previewToken",
+          "type": "string",
+          "required": false,
+          "description": "Token issued by the publisher preview endpoint"
+        }
+      ],
+      "responses": {
+        "200": { "schema": "EventPagePublicResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/purchase",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Purchase a quantity of a ticket type for the signed-in user.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "PurchaseTicketsRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "TicketPurchaseResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/checkout/stripe",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Create a Stripe PaymentIntent for ticket checkout.",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true },
+        { "name": "ticketId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "PurchaseTicketsRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "StripeCheckoutResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/barcode",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Return a short-lived, opaque barcode/QR payload for the user's owned ticket.",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true },
+        { "name": "ticketId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "type": "string",
+            "payload": "string",
+            "expiresAt": "string (date-time)",
+            "nonce": "string"
+          }
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/barcode",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Rotate/regenerate the ticket's barcode/QR payload (e.g., when lost/compromised).",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true },
+        { "name": "ticketId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "type": "string",
+            "payload": "string",
+            "expiresAt": "string (date-time)",
+            "nonce": "string"
+          }
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/webhooks/stripe",
+      "method": "POST",
+      "auth": "anonymous (Stripe)",
+      "description": "Stripe webhook endpoint used to finalize ticket purchases.",
+      "responses": {
+        "200": {},
+        "400": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/tickets",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List ticket types for a publisher-owned event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "TicketTypeResponse[]"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/tickets",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Create a ticket type for an event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "CreateTicketTypeRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "TicketTypeResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/tickets/{ticketId}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Update a ticket type's pricing or inventory.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateTicketTypeRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "TicketTypeResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/tickets/{ticketId}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Delete a ticket type from an event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/orders",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List orders/purchases for an event.",
+      "queryParams": [
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "OrderListResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/attendees",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Attendee roster/check-in data for an event.",
+      "queryParams": [
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "AttendeeListResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/reviews",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List approved reviews for a public event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventReviewResponse[]"
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/reviews",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Submit a new review that enters moderation.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "SubmitEventReviewRequest",
+        "required": true
+      },
+      "responses": {
+        "202": {
+          "schema": "EventReviewResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/events/{eventId}/reviews",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List pending reviews awaiting moderation for an event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "AdminEventReviewSummary[]"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/events/{eventId}/reviews/{reviewId}/approve",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Approve a pending review so it becomes public.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "reviewId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/events/{eventId}/reviews/{reviewId}",
+      "method": "DELETE",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Delete or reject a review from moderation.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "reviewId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
     }
   ],
   "schemas": {
@@ -251,7 +2496,17 @@
       "category": "string",
       "tags": "string[]",
       "verified": "boolean",
-      "status": "string"
+      "status": "string",
+      "shareUrl": "string | null",
+      "promoted": "boolean",
+      "promotion": "EventPromotionResponse | null",
+      "moderationStatus": "string",
+      "moderationNotes": "string | null",
+      "moderationUpdatedAtUtc": "string (date-time) | null",
+      "discounts": "EventDiscountResponse[]",
+      "hasCustomPage": "boolean",
+      "pageVersionId": "string | null",
+      "pageUpdatedAtUtc": "string (date-time) | null"
     },
     "EventDto": {
       "id": "string",
@@ -269,20 +2524,560 @@
       "lat": "number | null",
       "lon": "number | null",
       "geoHash": "string | null",
-      "state": "string | null"
+      "state": "string | null",
+      "hasCustomPage": "boolean",
+      "pageVersionId": "string | null",
+      "pageUpdatedAtUtc": "string (date-time) | null"
     },
+    "EventPageBlockResponse": {
+      "id": "string",
+      "type": "string",
+      "order": "integer",
+      "settings": "object",
+      "children": "EventPageBlockResponse[]"
+    },
+    "EventPageVersionResponse": {
+      "versionId": "string",
+      "revision": "integer",
+      "theme": "string",
+      "palette": "string | null",
+      "updatedAtUtc": "string (date-time)",
+      "publishedAtUtc": "string (date-time) | null",
+      "updatedBy": "string | null",
+      "blocks": "EventPageBlockResponse[]"
+    },
+    "PublisherEventPageResponse": {
+      "draft": "EventPageVersionResponse | null",
+      "published": "EventPageVersionResponse | null",
+      "hasUnpublishedChanges": "boolean"
+    },
+    "EventPagePublicResponse": {
+      "page": "EventPageVersionResponse | null",
+      "preview": "boolean"
+    },
+    "EventPageHistoryResponse": {
+      "history": "EventPageVersionResponse[]"
+    },
+    "EventPagePreviewTokenRequest": {
+      "expiresInSeconds": "integer | null"
+    },
+    "EventPagePreviewTokenResponse": {
+      "token": "string",
+      "expiresAtUtc": "string (date-time)",
+      "version": "EventPageVersionResponse"
+    },
+    "EventPageBlockRequest": {
+      "id": "string | null",
+      "type": "string",
+      "order": "integer",
+      "settings": "object",
+      "children": "EventPageBlockRequest[]"
+    },
+    "SaveEventPageRequest": {
+      "theme": "string",
+      "palette": "string | null",
+      "blocks": "EventPageBlockRequest[]",
+      "expectedRevision": "integer | null"
+    },
+    "PublishEventPageRequest": {
+      "expectedRevision": "integer | null"
+    },
+    "RestoreEventPageRequest": {
+      "publish": "boolean"
+    },
+    "PageBuilderCatalogResponse": {
+      "limits": "PageBuilderLimitResponse",
+      "blocks": "PageBuilderBlockDefinitionResponse[]",
+      "backgrounds": "PageBuilderBackgroundPresetResponse[]",
+      "media": "EventMediaItemResponse[]"
+    },
+    "PageBuilderLimitResponse": {
+      "maxBlocks": "integer",
+      "maxDepth": "integer",
+      "maxSettingsBytes": "integer",
+      "maxHistoryEntries": "integer",
+      "minPreviewSeconds": "integer",
+      "maxPreviewSeconds": "integer",
+      "defaultPreviewSeconds": "integer"
+    },
+    "PageBuilderBlockDefinitionResponse": {
+      "type": "string",
+      "label": "string",
+      "category": "string",
+      "description": "string",
+      "icon": "string",
+      "allowChildren": "boolean",
+      "supportsMedia": "boolean",
+      "supportsBackground": "boolean",
+      "requireMedia": "boolean",
+      "maxChildren": "integer | null",
+      "allowedChildTypes": "string[]",
+      "requiredSettings": "string[]",
+      "tags": "string[]"
+    },
+    "PageBuilderBackgroundPresetResponse": {
+      "id": "string",
+      "label": "string",
+      "kind": "string",
+      "colors": "string[]",
+      "url": "string | null",
+      "tags": "string[]"
+    },
+    "EventMediaItemResponse": {
+      "id": "string",
+      "url": "string",
+      "fileName": "string",
+      "contentType": "string",
+      "size": "integer",
+      "kind": "string",
+      "createdBy": "string",
+      "createdAtUtc": "string (date-time)",
+      "purposes": "string[]"
+    },
+    "UpdateEventMediaRequest": {
+      "purposes": "string[]"
+    },
+    "EventPageUsageResponse": {
+      "eventId": "string",
+      "hasDraft": "boolean",
+      "hasPublished": "boolean",
+      "draftRevision": "integer | null",
+      "publishedRevision": "integer | null",
+      "draftUpdatedAtUtc": "string (date-time) | null",
+      "publishedUpdatedAtUtc": "string (date-time) | null",
+      "blocks": "EventPageBlockUsage[]",
+      "media": "EventPageMediaUsage[]"
+    },
+    "EventPageBlockUsage": {
+      "type": "string",
+      "draftCount": "integer",
+      "publishedCount": "integer"
+    },
+    "EventPageMediaUsage": {
+      "mediaId": "string",
+      "referencedInDraft": "boolean",
+      "referencedInPublished": "boolean"
+    },
+    "EventDiscountRequest": {
+      "name": "string",
+      "description": "string | null",
+      "promoCode": "string | null",
+      "url": "string | null",
+      "percentOff": "number | null",
+      "amountOff": "number | null",
+      "currency": "string",
+      "expiresAtUtc": "string (date-time) | null",
+      "active": "boolean"
+    },
+    "EventDiscountDto": "EventDiscountRequest + { id: string }",
     "ReportEventRequest": {
       "eventId": "string",
       "category": "string",
       "notes": "string | null"
     },
-    "CategoryItem": { "id": "string", "name": "string", "tags": "string[]" },
-    "CreateKeyRequest": { "role": "string", "ownerId": "string | null", "perMinuteLimit": "integer | null", "expiresAt": "string(date-time) | null" },
-    "CreateKeyResponse": { "id": "string", "apiKey": "string", "role": "string", "last4": "string", "keyId": "string" },
-    "WeatherForecast": { "date": "date", "temperatureC": "integer", "summary": "string" }
-    ,
-    "UserProfile": { "uid": "string", "email": "string | null", "displayName": "string | null", "socxalId": "string | null" },
-    "LinkSocxalRequest": { "socxalId": "string" },
-    "ClaimsMap": { "description": "map of claimName->claimValue (string->string)", "example": { "role": "publisher", "tenant": "acme" } }
+    "CategoryItem": {
+      "id": "string",
+      "name": "string",
+      "tags": "string[]"
+    },
+    "CreateKeyRequest": {
+      "role": "string",
+      "ownerId": "string | null",
+      "perMinuteLimit": "integer | null",
+      "expiresAt": "string(date-time) | null"
+    },
+    "CreateKeyResponse": {
+      "id": "string",
+      "apiKey": "string",
+      "role": "string",
+      "last4": "string",
+      "keyId": "string"
+    },
+    "WeatherForecast": {
+      "date": "date",
+      "temperatureC": "integer",
+      "summary": "string"
+    },
+    "UserProfile": {
+      "uid": "string",
+      "email": "string | null",
+      "displayName": "string | null",
+      "socxalId": "string | null",
+      "phoneNumber": "string | null",
+      "allowContact": "boolean",
+      "photoUrl": "string | null"
+    },
+    "LinkSocxalRequest": {
+      "socxalId": "string"
+    },
+    "ClaimsMap": {
+      "description": "map of claimName->claimValue (string->string)",
+      "example": {
+        "role": "publisher",
+        "tenant": "acme"
+      }
+    },
+    "UserSession": {
+      "id": "string",
+      "device": "string",
+      "ip": "string | null",
+      "location": "string | null",
+      "createdUtc": "string (date-time)",
+      "lastSeenUtc": "string (date-time)",
+      "current": "boolean"
+    },
+    "UserSessionsResponse": {
+      "sessions": "UserSession[]",
+      "activeCount": "integer"
+    },
+    "UpdateUserProfileRequest": {
+      "displayName": "string | null",
+      "phoneNumber": "string | null",
+      "email": "string | null",
+      "allowContact": "boolean | null"
+    },
+    "NotificationPreferences": {
+      "email": "boolean",
+      "push": "boolean",
+      "sms": "boolean"
+    },
+    "DiscoveryPreferences": {
+      "defaultRadiusKm": "integer | null",
+      "enableDiscovery": "boolean",
+      "forceDiscover": "boolean"
+    },
+    "UserPreferences": {
+      "notifications": "NotificationPreferences",
+      "discovery": "DiscoveryPreferences",
+      "favoriteCategories": "string[]",
+      "savedLocations": "SavedLocation[]"
+    },
+    "CategoryPreferencesRequest": {
+      "favoriteCategories": "string[]"
+    },
+    "SavedLocation": {
+      "label": "string",
+      "lat": "number",
+      "lon": "number",
+      "radiusKm": "integer",
+      "city": "string | null",
+      "state": "string | null"
+    },
+    "LocationPreferencesRequest": {
+      "savedLocations": "SavedLocation[]"
+    },
+    "PublisherEventSummary": {
+      "id": "string",
+      "title": "string",
+      "startUtc": "string (date-time)",
+      "status": "string",
+      "ticketsSold": "integer",
+      "views": "integer",
+      "heroImageUrl": "string | null"
+    },
+    "PublisherEventListResponse": {
+      "items": "PublisherEventSummary[]",
+      "page": "integer",
+      "pageSize": "integer",
+      "total": "integer",
+      "nextPageToken": "string | null"
+    },
+    "UploadEventImageRequest": {
+      "description": "multipart/form-data payload with file (binary) and variant hero|gallery"
+    },
+    "EventStatsResponse": {
+      "views": "integer",
+      "ticketsSold": "integer",
+      "favorites": "integer",
+      "shares": "integer",
+      "reportCount": "integer"
+    },
+    "PublisherTaskItem": {
+      "id": "string",
+      "type": "string",
+      "eventId": "string | null",
+      "summary": "string",
+      "state": "string",
+      "dueUtc": "string (date-time) | null"
+    },
+    "PublisherTaskListResponse": {
+      "items": "PublisherTaskItem[]",
+      "outstanding": "integer"
+    },
+    "AdminReportSummary": {
+      "id": "string",
+      "eventId": "string",
+      "category": "string",
+      "status": "string",
+      "submittedBy": "string | null",
+      "createdUtc": "string (date-time)"
+    },
+    "PagedAdminReportSummary": {
+      "items": "AdminReportSummary[]",
+      "page": "integer",
+      "pageSize": "integer",
+      "total": "integer"
+    },
+    "ReportTimelineEvent": {
+      "status": "string",
+      "notes": "string | null",
+      "actor": "string",
+      "timestampUtc": "string (date-time)"
+    },
+    "AdminReportDetail": {
+      "report": "AdminReportSummary",
+      "notes": "string | null",
+      "timeline": "ReportTimelineEvent[]",
+      "attachments": "string[]"
+    },
+    "UpdateReportStatusRequest": {
+      "status": "string",
+      "notes": "string | null",
+      "assignee": "string | null"
+    },
+    "AdminEventDetail": "EventDto + { visibility: string, reports: AdminReportSummary[] }",
+    "SocxalIdentity": {
+      "uid": "string",
+      "email": "string | null",
+      "displayName": "string | null",
+      "roles": "string[]",
+      "socxalId": "string | null"
+    },
+    "SocxalResetPasswordRequest": {
+      "email": "string",
+      "redirectUri": "string | null"
+    },
+    "SocxalUpdateProfileRequest": {
+      "displayName": "string | null",
+      "phoneNumber": "string | null",
+      "photoUrl": "string | null"
+    },
+    "EventSourceConfig": {
+      "id": "string",
+      "name": "string",
+      "type": "string",
+      "enabled": "boolean",
+      "hostPattern": "string | null",
+      "maxUrls": "integer",
+      "maxCreates": "integer",
+      "priority": "integer",
+      "settings": "map"
+    },
+    "IngestionPlan": {
+      "id": "string",
+      "name": "string",
+      "city": "string | null",
+      "cseQueries": "string[]",
+      "icsFeeds": "string[]",
+      "enabled": "boolean"
+    },
+    "GrouponDealConfig": {
+      "enabled": "boolean",
+      "intervalSeconds": "integer",
+      "maxDealsPerMarket": "integer",
+      "matchRadiusKm": "integer",
+      "matchCandidates": "integer",
+      "matchThreshold": "number",
+      "eventKeywords": "string[]",
+      "markets": "GrouponMarketConfig[]"
+    },
+    "GrouponMarketConfig": {
+      "id": "string",
+      "name": "string",
+      "divisionId": "string | null",
+      "city": "string | null",
+      "lat": "number | null",
+      "lon": "number | null",
+      "radiusKm": "integer",
+      "query": "string | null",
+      "limit": "integer | null",
+      "enabled": "boolean"
+    },
+    "HtmlScraperConfig": {
+      "id": "string",
+      "name": "string",
+      "enabled": "boolean",
+      "baseUrl": "string",
+      "hostPattern": "string | null",
+      "listXPath": "string",
+      "titleXPath": "string",
+      "titleAttribute": "string | null",
+      "descriptionXPath": "string | null",
+      "descriptionAttribute": "string | null",
+      "startXPath": "string",
+      "startAttribute": "string | null",
+      "endXPath": "string | null",
+      "endAttribute": "string | null",
+      "linkXPath": "string | null",
+      "linkAttribute": "string | null",
+      "imageXPath": "string | null",
+      "imageAttribute": "string | null",
+      "venueNameXPath": "string | null",
+      "venueNameAttribute": "string | null",
+      "venueAddressXPath": "string | null",
+      "venueAddressAttribute": "string | null",
+      "timezone": "string",
+      "category": "string",
+      "tags": "string[]",
+      "defaultCity": "string | null",
+      "defaultState": "string | null",
+      "alwaysUseBaseUrl": "boolean"
+    },
+    "SubmitEventRatingRequest": {
+      "rating": "integer (1-5)",
+      "review": "string | null"
+    },
+    "EventRatingResponse": {
+      "id": "string",
+      "eventId": "string",
+      "userId": "string",
+      "userDisplayName": "string | null",
+      "rating": "integer",
+      "review": "string | null",
+      "updatedAtUtc": "string (date-time)"
+    },
+    "EventRatingSummary": {
+      "average": "number",
+      "count": "integer",
+      "items": "EventRatingResponse[]",
+      "userRating": "EventRatingResponse | null"
+    },
+    "CreateTicketTypeRequest": {
+      "name": "string",
+      "description": "string | null",
+      "price": "number",
+      "currency": "string",
+      "quantityTotal": "integer",
+      "salesStartUtc": "string (date-time) | null",
+      "salesEndUtc": "string (date-time) | null"
+    },
+    "UpdateTicketTypeRequest": "CreateTicketTypeRequest",
+    "TicketTypeResponse": {
+      "id": "string",
+      "eventId": "string",
+      "name": "string",
+      "description": "string | null",
+      "price": "number",
+      "currency": "string",
+      "quantityTotal": "integer",
+      "quantityAvailable": "integer",
+      "salesStartUtc": "string (date-time) | null",
+      "salesEndUtc": "string (date-time) | null"
+    },
+    "PurchaseTicketsRequest": {
+      "quantity": "integer"
+    },
+    "TicketPurchaseResponse": {
+      "id": "string",
+      "ticketId": "string",
+      "eventId": "string",
+      "userId": "string",
+      "quantity": "integer",
+      "totalPaid": "number",
+      "createdAtUtc": "string (date-time)"
+    },
+    "StripeCheckoutResponse": {
+      "paymentIntentId": "string",
+      "clientSecret": "string",
+      "amount": "integer",
+      "currency": "string",
+      "status": "string"
+    },
+    "SubmitEventReviewRequest": {
+      "title": "string",
+      "body": "string"
+    },
+    "EventReviewResponse": {
+      "id": "string",
+      "eventId": "string",
+      "userId": "string",
+      "userDisplayName": "string | null",
+      "title": "string",
+      "body": "string",
+      "status": "string",
+      "createdAtUtc": "string (date-time)",
+      "updatedAtUtc": "string (date-time)"
+    },
+    "AdminEventReviewSummary": {
+      "id": "string",
+      "title": "string",
+      "body": "string",
+      "userDisplayName": "string | null",
+      "status": "string",
+      "createdAtUtc": "string (date-time)"
+    },
+    "SavedEventItem": {
+      "id": "string",
+      "eventId": "string",
+      "savedAtUtc": "string (date-time)",
+      "event": "EventDto | null"
+    },
+    "SavedEventsResponse": {
+      "items": "SavedEventItem[]",
+      "nextPageToken": "string | null"
+    },
+    "NotificationItem": {
+      "id": "string",
+      "title": "string",
+      "body": "string",
+      "type": "string",
+      "createdUtc": "string (date-time)",
+      "read": "boolean",
+      "readAtUtc": "string (date-time) | null",
+      "metadata": "map | null"
+    },
+    "NotificationsResponse": {
+      "items": "NotificationItem[]",
+      "nextPageToken": "string | null"
+    },
+    "UpdateNotificationRequest": {
+      "read": "boolean | null"
+    },
+    "UserTicketSummary": {
+      "id": "string",
+      "eventId": "string",
+      "eventTitle": "string",
+      "eventStartUtc": "string (date-time)",
+      "status": "string",
+      "qrCode": "string | null",
+      "claimCode": "string | null"
+    },
+    "UserTicketsResponse": {
+      "items": "UserTicketSummary[]",
+      "nextPageToken": "string | null"
+    },
+    "TicketDetailResponse": "UserTicketSummary + { seat: string | null, eventVenue: string | null }",
+    "TransferTicketRequest": {
+      "toUserId": "string | null",
+      "toEmail": "string | null"
+    },
+    "UserEventsResponse": {
+      "items": "EventDto[]",
+      "nextPageToken": "string | null"
+    },
+    "OrderSummary": {
+      "id": "string",
+      "purchaserId": "string",
+      "quantity": "integer",
+      "totalPaid": "number",
+      "status": "string",
+      "createdAtUtc": "string (date-time)"
+    },
+    "OrderListResponse": {
+      "items": "OrderSummary[]",
+      "nextPageToken": "string | null"
+    },
+    "AttendeeItem": {
+      "ticketId": "string",
+      "userId": "string",
+      "displayName": "string | null",
+      "status": "string",
+      "checkedIn": "boolean",
+      "checkedInAtUtc": "string (date-time) | null"
+    },
+    "AttendeeListResponse": {
+      "items": "AttendeeItem[]",
+      "nextPageToken": "string | null"
+    }
   }
 }
