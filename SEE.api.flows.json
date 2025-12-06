@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Frontend workflow guide for SEE API (auth, onboarding, ticketing, RSVPs, pages, notifications, reviews, search, playlists, archive, moderation). Use with SEE.api.web.endpoints.json + SEE.api.payloads.json.",
+  "flows": {
+    "auth.login": [
+      "POST /v1/auth/signin or /v1/auth/magic-link (get idToken)",
+      "Set idToken as Bearer for all calls",
+      "GET /v1/auth/me to hydrate profile; capture uid and primaryBusinessId",
+      "Capture X-Session-Id response header; send it back on subsequent requests (X-Session-Id) to keep the same session"
+    ],
+    "auth.magicLink": [
+      "POST /v1/auth/magic-link with {email, redirectUrl?} to request link",
+      "User clicks link -> frontend calls POST /v1/auth/magic-link/consume with token to get customToken",
+      "Optional: poll GET /v1/auth/magic-link/{token} for status",
+      "Sign into Firebase with customToken, continue login flow"
+    ],
+    "auth.signup": [
+      "POST /v1/auth/signup (user) or /v1/auth/signup/business (business + custom token)",
+      "Use returned customToken to sign into Firebase; proceed as login flow"
+    ],
+    "auth.logout": [
+      "POST /v1/auth/logout (optional {sessionId}) to end this session",
+      "POST /v1/auth/logout-all to revoke all sessions",
+      "Listen for SignalR event sessionRevoked to drop tokens client-side"
+    ],
+    "onboarding.user": [
+      "POST /v1/users/{uid}/onboarding with steps + nextStep (track UI state)",
+      "POST /v1/users/{uid}/location with city/state/lat/lon",
+      "POST /v1/users/{uid}/goals with goals array",
+      "PUT /v1/users/{uid}/preferences (categories/notifications/locations)",
+      "Completed when steps.completed=true from GET /v1/users/{uid}/onboarding"
+    ],
+    "onboarding.business": [
+      "POST /v1/users/{uid}/convert-to-business with business info",
+      "Optionally POST /v1/users/{uid}/business-logo (multipart)",
+      "Result: BusinessDetail + primaryBusinessId; use in publisher flows"
+    ],
+    "events.search": [
+      "GET /v1/public/events (public) or /v1/events (advanced) with geo/text filters",
+      "GET /v1/public/events/{id} for details",
+      "GET /v1/public/events/playlists and /v1/public/events/playlists/{id} for curated lists"
+    ],
+    "events.playlists.public": [
+      "GET /v1/public/events/playlists for featured playlists",
+      "GET /v1/public/events/playlists/{id}?lat=&lon= to fetch items"
+    ],
+    "events.playlists.admin": [
+      "GET /v1/admin/event-playlists to manage definitions",
+      "POST /v1/admin/event-playlists or PUT /v1/admin/event-playlists/{id}",
+      "DELETE /v1/admin/event-playlists/{id} to disable/remove",
+      "POST /v1/admin/event-playlists/seed for bulk"
+    ],
+    "events.categories": [
+      "GET /v1/categories for taxonomy",
+      "POST /v1/categories/seed (admin seeding)"
+    ],
+    "events.archive.restore": [
+      "Admin: GET /v1/admin/events/archivable to list candidates",
+      "Admin: POST /v1/admin/events/archive-run to move to archive",
+      "Public: GET /v1/archived-events/{id} to view archived",
+      "Admin: POST /v1/admin/archived-events/{id}/restore or DELETE to purge",
+      "Admin: POST /v1/admin/events/archive-media-cleanup for blob cleanup"
+    ],
+    "events.cancel.hide": [
+      "Publisher cancel SEE events: POST /v1/publisher/events/{id}/cancel (SEE-only guard)",
+      "Admin hide: POST /v1/admin/events/{id}/hide"
+    ],
+    "events.verify.promote": [
+      "Admin verify: POST /v1/admin/events/{id}/verify?v=true|false",
+      "Publisher promotion: POST/GET/DELETE /v1/publisher/events/{id}/promotion"
+    ],
+    "events.interactions.analytics": [
+      "POST /v1/events/{eventId}/interactions to log view/click/save/ticket/map",
+      "Publisher: GET /v1/publisher/events/{eventId}/interactions for aggregates"
+    ],
+    "events.create.publisher": [
+      "Pick business via GET /v1/users/{uid}/business-memberships",
+      "POST /v1/publisher/events with CreateEventRequest",
+      "Optional: Upload media /v1/publisher/events/{id}/media (multipart) or images /v1/publisher/events/{id}/images",
+      "Optional: Build page with GET/PUT /v1/publisher/events/{id}/page and preview/publish endpoints",
+      "POST /v1/publisher/events/{id}/publish to go live"
+    ],
+    "events.manage.tickets.publisher": [
+      "GET /v1/publisher/events/{eventId}/tickets to list types",
+      "POST /v1/publisher/events/{eventId}/tickets to create type",
+      "PUT /v1/publisher/events/{eventId}/tickets/{ticketId} to update",
+      "DELETE /v1/publisher/events/{eventId}/tickets/{ticketId} to delete",
+      "GET /v1/publisher/events/{id}/orders and /attendees for roster",
+      "GET /v1/publisher/events/{id}/stats for summary"
+    ],
+    "events.pages.public": [
+      "GET /v1/events/{id}/page (public render)",
+      "GET /v1/events/{id}/page?previewToken= for draft preview"
+    ],
+    "ticketing.checkout": [
+      "GET /v1/events/{eventId}/tickets to show ticket types",
+      "POST /v1/events/{eventId}/tickets/{ticketId}/checkout/stripe with {quantity, recipientEmail?, recipientPhone?} to create checkout session + payment intent; capture checkoutId, clientSecret",
+      "Complete Stripe payment client-side with clientSecret",
+      "POST /v1/events/{eventId}/tickets/{ticketId}/purchase with {quantity?, checkoutId} to issue tickets (requires succeeded intent or free ReadyToIssue)",
+      "Listen to SignalR ticketStatusUpdated and ticketDelivery; resend via POST /v1/events/{eventId}/tickets/{ticketId}/resend"
+    ],
+    "ticketing.barcode": [
+      "GET /v1/events/{eventId}/tickets/{ticketId}/barcode (Bearer) returns signed token",
+      "POST /v1/events/{eventId}/tickets/verify with {token, checkIn:true|false} for scanning/check-in"
+    ],
+    "ticketing.refund": [
+      "POST /v1/events/{eventId}/tickets/{ticketId}/refund with {reason?, force?} (force requires admin) respects refund cutoff",
+      "Receive ticketStatusUpdated and optionally ticketDelivery for any notification about refund"
+    ],
+    "ticketing.verify.checkin": [
+      "Issuer/host scans: POST /v1/events/{eventId}/tickets/verify with {token, checkIn:true|false}",
+      "Owner: GET /v1/events/{eventId}/tickets/{ticketId}/barcode to fetch signed token"
+    ],
+    "ticketing.purchases.user": [
+      "GET /v1/users/{uid}/tickets to list purchases",
+      "GET /v1/users/{uid}/tickets/{ticketId} for details/QR",
+      "POST /v1/events/{eventId}/tickets/{ticketId}/resend to resend delivery"
+    ],
+    "rsvp": [
+      "PUT /v1/events/{eventId}/rsvp with {status: going|interested|bookmarked|none}",
+      "GET /v1/events/{eventId}/rsvp to fetch user status",
+      "GET /v1/events/{eventId}/rsvp/summary for counts",
+      "Listen for rsvpSummaryUpdated via SignalR when on an event page"
+    ],
+    "saved.events": [
+      "POST /v1/users/{uid}/saved/{eventId} to bookmark",
+      "DELETE /v1/users/{uid}/saved/{eventId} to remove",
+      "GET /v1/users/{uid}/saved for list; SignalR sessionRevoked should force refetch on logout"
+    ],
+    "business.pages": [
+      "GET /v1/publisher/businesses/{businessId}/page to load draft/published",
+      "PUT /v1/publisher/businesses/{businessId}/page to save draft (SaveEventPageRequest)",
+      "POST /v1/publisher/businesses/{businessId}/page/publish to publish",
+      "GET /v1/businesses/{businessId}/page (public) to render"
+    ],
+    "business.media": [
+      "GET /v1/publisher/businesses/{businessId}/media",
+      "POST /v1/publisher/businesses/{businessId}/media (multipart)",
+      "PUT /v1/publisher/businesses/{businessId}/media/{mediaId}",
+      "DELETE /v1/publisher/businesses/{businessId}/media/{mediaId}"
+    ],
+    "event.pages": [
+      "GET /v1/publisher/events/{eventId}/page to load draft/published",
+      "PUT /v1/publisher/events/{eventId}/page to save draft",
+      "POST /v1/publisher/events/{eventId}/page/publish to publish",
+      "GET /v1/events/{eventId}/page (public) to render; or previewToken for drafts"
+    ],
+    "reviews": [
+      "GET /v1/events/{eventId}/reviews (public approved reviews)",
+      "POST /v1/events/{eventId}/reviews with SubmitEventReviewRequest (enters moderation)",
+      "Admin moderation via /v1/admin/events/{eventId}/reviews... (not for FE)"
+    ],
+    "ratings": [
+      "GET /v1/events/{eventId}/ratings (summary)",
+      "POST /v1/events/{eventId}/ratings with SubmitEventRatingRequest",
+      "DELETE /v1/events/{eventId}/ratings/me to remove user rating"
+    ],
+    "reports.moderation": [
+      "Public: POST /v1/public/reports with {eventId, category, notes}",
+      "Admin: GET /v1/admin/reports (filters) and GET /v1/admin/events/{id} for flagged event",
+      "Admin: PATCH /v1/admin/reports/{id} to update status; DELETE/APPROVE review endpoints for moderation"
+    ],
+    "notifications": [
+      "SignalR event notification {id,title,body,type,createdAt,metadata} on user:{uid}",
+      "REST: GET /v1/users/{uid}/notifications (page, includeRead); PATCH /v1/users/{uid}/notifications/{notificationId} {read:true} to mark read",
+      "If realtime received, mark delivered client-side and optionally call PATCH to sync read state"
+    ],
+    "sessions": [
+      "GET /v1/users/{uid}/sessions to list active sessions (uses stored docs)",
+      "POST /v1/auth/logout to end current session; POST /v1/auth/logout-all to end all; sessionRevoked pushes via SignalR"
+    ],
+    "directories": [
+      "GET /v1/venues for venue selector",
+      "GET /v1/hosts for host selector",
+      "GET /v1/businesses/directory for business selector"
+    ],
+    "admin.only (reference)": [
+      "Manage playlists, event sources, ingestion, archiving, notifications templates, ticket audit, RSVPs list, etc. Use SEE.api.admin.endpoints.json"
+    ]
+  },
+  "realtime": {
+    "hub": "/ws/updates",
+    "auth": "Bearer/Firebase ID token",
+    "session": "Send X-Session-Id header if provided; server returns X-Session-Id",
+    "subscribe": [
+      "Auto-join user:{uid}",
+      "Join event groups via query ?eventId=evt1 or hub methods SubscribeEvent/UnsubscribeEvent",
+      "Handle client events: ticketStatusUpdated, ticketDelivery, rsvpSummaryUpdated, sessionRevoked, notification",
+      "On reconnect: resubscribe to event groups and optionally refetch REST state"
+    ],
+    "rateLimit": "20 hub calls per 10s per connection; HubException rate_limited if exceeded"
+  }
+}

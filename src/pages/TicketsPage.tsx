@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import UserMenu from '../components/UserMenu'
 import { useAuth } from '../context/AuthContext'
 import { api, getUserIdFromProfile } from '../services/api'
+import SiteNav from '../components/SiteNav'
+import { useRealtime } from '../context/RealtimeContext'
 
 type Ticket = {
   id: string
@@ -23,42 +24,60 @@ const mockTickets: Ticket[] = [
 
 export default function TicketsPage() {
   const auth = useAuth()
+  const realtime = useRealtime()
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [status, setStatus] = useState<string | null>('Loading tickets…')
   const [activeTicketCode, setActiveTicketCode] = useState<{ [key: string]: Ticket['barcode'] | null }>({})
   const [codeStatus, setCodeStatus] = useState<{ [key: string]: string | null }>({})
   const [transferEmail, setTransferEmail] = useState<{ [key: string]: string }>({})
   const [transferStatus, setTransferStatus] = useState<{ [key: string]: string | null }>({})
+  const [refundStatus, setRefundStatus] = useState<{ [key: string]: string | null }>({})
+
+  const loadTickets = React.useCallback(async () => {
+    const userId = getUserIdFromProfile(auth.profile)
+    if (!auth.idToken || !userId) {
+      setTickets(mockTickets)
+      setStatus('Sign in to view your real tickets.')
+      return
+    }
+    try {
+      const resp = await api.fetchUserTickets(userId, auth.idToken)
+      const normalized = Array.isArray(resp) ? resp : (resp?.items || [])
+      setTickets(normalized.length ? normalized.map(t => ({
+        id: t.id,
+        eventId: t.eventId,
+        eventTitle: t.eventTitle || t.name || 'Event',
+        eventDate: t.eventDate,
+        venue: t.venue,
+        status: (t.status as any) || 'active',
+        barcode: t.barcode || (t.qrCode ? { type: 'QR', payload: t.qrCode } : undefined),
+        claimCode: (t as any).claimCode
+      })) : [])
+      setStatus(normalized.length ? null : 'No tickets found.')
+    } catch (err: any) {
+      setTickets(mockTickets)
+      setStatus(err?.message || 'Unable to load tickets; showing sample data.')
+    }
+  }, [auth.idToken, auth.profile])
 
   useEffect(() => {
-    const loadTickets = async () => {
-      const userId = getUserIdFromProfile(auth.profile)
-      if (!auth.idToken || !userId) {
-        setTickets(mockTickets)
-        setStatus('Sign in to view your real tickets.')
-        return
-      }
-      try {
-        const resp = await api.fetchUserTickets(userId, auth.idToken)
-        const normalized = Array.isArray(resp) ? resp : (resp?.items || [])
-        setTickets(normalized.length ? normalized.map(t => ({
-          id: t.id,
-          eventId: t.eventId,
-          eventTitle: t.eventTitle || t.name || 'Event',
-          eventDate: t.eventDate,
-          venue: t.venue,
-          status: (t.status as any) || 'active',
-          barcode: t.barcode || (t.qrCode ? { type: 'QR', payload: t.qrCode } : undefined),
-          claimCode: (t as any).claimCode
-        })) : [])
-        setStatus(normalized.length ? null : 'No tickets found.')
-      } catch (err: any) {
-        setTickets(mockTickets)
-        setStatus(err?.message || 'Unable to load tickets; showing sample data.')
-      }
-    }
     loadTickets()
-  }, [auth.idToken])
+  }, [loadTickets])
+
+  useEffect(() => {
+    const unsubStatus = realtime.addListener('ticketStatusUpdated', (payload: any) => {
+      setRefundStatus(prev => ({ ...prev, [payload.ticketId]: `Status: ${payload.status}` }))
+      loadTickets()
+    })
+    const unsubDelivery = realtime.addListener('ticketDelivery', (payload: any) => {
+      setRefundStatus(prev => ({ ...prev, [payload.ticketId]: payload.success ? 'Delivered' : payload.error || 'Delivery failed' }))
+      loadTickets()
+    })
+    return () => {
+      unsubStatus()
+      unsubDelivery()
+    }
+  }, [realtime, loadTickets])
 
   if (!auth.isReady) {
     return <div className="container" style={{ padding: '3rem 0' }}><p>Loading tickets…</p></div>
@@ -76,16 +95,7 @@ export default function TicketsPage() {
 
   return (
     <div>
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/tickets" className="nav-link active">My Tickets</Link>
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav links={[{ to: '/discover', label: 'Discover' }, { to: '/tickets', label: 'My Tickets' }]} activePath="/tickets" />
 
       <div className="container" style={{ padding: '3rem 0' }}>
         <header style={{ marginBottom: '1.5rem' }}>
@@ -176,6 +186,47 @@ export default function TicketsPage() {
                   </div>
                 )}
                 {codeStatus[ticket.id] && <p style={{ color: 'var(--gray-600)', marginTop: '0.5rem' }}>{codeStatus[ticket.id]}</p>}
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={async () => {
+                      if (!auth.idToken || !ticket.eventId) {
+                        setRefundStatus(prev => ({ ...prev, [ticket.id]: 'Sign in to resend.' }))
+                        return
+                      }
+                      try {
+                        setRefundStatus(prev => ({ ...prev, [ticket.id]: 'Resending…' }))
+                        await api.resendTicket(ticket.eventId, ticket.id, auth.idToken)
+                        setRefundStatus(prev => ({ ...prev, [ticket.id]: 'Sent.' }))
+                      } catch (err: any) {
+                        setRefundStatus(prev => ({ ...prev, [ticket.id]: err?.message || 'Resend failed' }))
+                      }
+                    }}
+                  >
+                    Resend
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={async () => {
+                      if (!auth.idToken || !ticket.eventId) {
+                        setRefundStatus(prev => ({ ...prev, [ticket.id]: 'Sign in to request refund.' }))
+                        return
+                      }
+                      try {
+                        setRefundStatus(prev => ({ ...prev, [ticket.id]: 'Requesting refund…' }))
+                        await api.refundTicket(ticket.eventId, ticket.id, { reason: 'user_requested' }, auth.idToken)
+                        setRefundStatus(prev => ({ ...prev, [ticket.id]: 'Refund requested.' }))
+                      } catch (err: any) {
+                        setRefundStatus(prev => ({ ...prev, [ticket.id]: err?.message || 'Refund request failed' }))
+                      }
+                    }}
+                  >
+                    Refund
+                  </button>
+                </div>
+                {refundStatus[ticket.id] && <p style={{ color: 'var(--gray-600)', margin: 0 }}>{refundStatus[ticket.id]}</p>}
               </div>
             </div>
           ))}

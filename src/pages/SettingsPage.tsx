@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { updateSocxalProfile, resetSocxalPassword, logoutAllSocxalSessions } from '../../lib/socxal'
 import { useAuth } from '../context/AuthContext'
-import UserMenu from '../components/UserMenu'
-import NotificationBell from '../components/NotificationBell'
+import SiteNav from '../components/SiteNav'
 
 const notificationOptions = [
   { label: 'Email me when events I follow are updated', key: 'followedUpdates', enabled: true },
@@ -70,21 +69,17 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/profile" className="nav-link">Profile</Link>
-            <Link to="/settings" className="nav-link active">Settings</Link>
-            <Link to="/preferences" className="nav-link">Preferences</Link>
-            <Link to="/saved" className="nav-link">Saved</Link>
-            <Link to="/tickets" className="nav-link">My Tickets</Link>
-            <NotificationBell />
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        activePath="/settings"
+        links={[
+          { to: '/discover', label: 'Discover' },
+          { to: '/profile', label: 'Profile' },
+          { to: '/settings', label: 'Settings' },
+          { to: '/preferences', label: 'Preferences' },
+          { to: '/saved', label: 'Saved' },
+          { to: '/tickets', label: 'My Tickets' }
+        ]}
+      />
 
       <div className="container" style={{ padding: '3rem 0', maxWidth: '720px' }}>
         <header style={{ marginBottom: '2rem' }}>

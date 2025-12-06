@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import UserMenu from '../components/UserMenu'
 import { api, UserNotification, getUserIdFromProfile } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import SiteNav from '../components/SiteNav'
 
 export default function InboxPage() {
   const auth = useAuth()
@@ -31,16 +31,13 @@ export default function InboxPage() {
 
   return (
     <div>
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/inbox" className="nav-link active">Inbox</Link>
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        activePath="/inbox"
+        links={[
+          { to: '/discover', label: 'Discover' },
+          { to: '/inbox', label: 'Inbox' }
+        ]}
+      />
 
       <div className="container" style={{ padding: '3rem 0', maxWidth: '720px' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem' }}>Notifications</h1>

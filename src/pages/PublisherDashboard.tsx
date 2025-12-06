@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import UserMenu from '../components/UserMenu'
-import NotificationBell from '../components/NotificationBell'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
+import SiteNav from '../components/SiteNav'
 
 const mockTasks = [
   'Upload hero image for your upcoming event',
@@ -19,6 +18,21 @@ export default function PublisherDashboard() {
   const [selectedDiscounts, setSelectedDiscounts] = useState<{ [key: string]: any[] }>({})
   const [discountStatus, setDiscountStatus] = useState<{ [key: string]: string | null }>({})
   const [pageStatus, setPageStatus] = useState<{ [key: string]: string | null }>({})
+  const businessId = useMemo(() => {
+    if (auth.primaryBusinessId) return auth.primaryBusinessId
+    if (auth.businessMemberships?.length) {
+      return auth.businessMemberships[0]?.businessId || null
+    }
+    if (!auth.profile) return null
+    return (
+      auth.profile.businessId ||
+      auth.profile.business?.id ||
+      auth.profile.business?.businessId ||
+      auth.profile.publisher?.businessId ||
+      auth.profile.businesses?.[0]?.id ||
+      null
+    )
+  }, [auth.primaryBusinessId, auth.businessMemberships, auth.profile])
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -28,17 +42,33 @@ export default function PublisherDashboard() {
       }
       try {
         const resp = await api.fetchPublisherEventsAuthorized(auth.idToken)
-        const normalized = Array.isArray(resp?.items) ? resp.items : (resp.events || resp || [])
-        const enriched = await Promise.all(normalized.map(async (evt: any) => {
-          try {
-            const stats = await api.fetchPublisherEventStats(evt.id || evt.eventId, auth.idToken!)
-            return { ...evt, stats }
-          } catch {
-            return evt
-          }
+        const normalized =
+          (Array.isArray((resp as any)?.items) && (resp as any).items) ||
+          (Array.isArray((resp as any)?.Items) && (resp as any).Items) ||
+          (Array.isArray((resp as any)?.events) && (resp as any).events) ||
+          (Array.isArray(resp) ? resp : [])
+        const normalizedWithIds = normalized.map((evt: any) => ({
+          ...evt,
+          id: evt.id || evt.eventId || evt.Id,
+          title: evt.title || evt.Title,
+          status: evt.status || evt.Status
         }))
+        const enriched = await Promise.all(
+          normalizedWithIds.map(async (evt: any) => {
+            const eventId = evt.id || evt.eventId
+            if (!eventId) return evt
+            const result: any = { ...evt }
+            const [statsResult, interactionsResult] = await Promise.allSettled([
+              api.fetchPublisherEventStats(eventId, auth.idToken!),
+              api.fetchPublisherEventInteractions(eventId, auth.idToken!)
+            ])
+            if (statsResult.status === 'fulfilled') result.stats = statsResult.value
+            if (interactionsResult.status === 'fulfilled') result.interactions = interactionsResult.value
+            return result
+          })
+        )
         setEvents(enriched)
-        setStatus(normalized.length ? null : 'No events yet. Create one to get started.')
+        setStatus(enriched.length ? null : 'No events yet. Create one to get started.')
       } catch (err: any) {
         setEvents([])
         setStatus(err?.message || 'Failed to load publisher events')
@@ -73,20 +103,16 @@ export default function PublisherDashboard() {
   }
   return (
     <div>
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/publisher" className="nav-link active">Publisher Console</Link>
-            <Link to="/reports" className="nav-link">Reports</Link>
-            <Link to="/saved" className="nav-link">Saved</Link>
-            <Link to="/tickets" className="nav-link">My Tickets</Link>
-            <NotificationBell />
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        activePath="/publisher"
+        links={[
+          { to: '/discover', label: 'Discover' },
+          { to: '/publisher', label: 'Publisher Console' },
+          { to: '/reports', label: 'Reports' },
+          { to: '/saved', label: 'Saved' },
+          { to: '/tickets', label: 'My Tickets' }
+        ]}
+      />
 
       <div className="container" style={{ padding: '3rem 0' }}>
         <header style={{ marginBottom: '2rem' }}>
@@ -113,6 +139,25 @@ export default function PublisherDashboard() {
               </ul>
             </div>
           </div>
+          <div className="card">
+            <div className="card-body">
+              <h3 className="card-title">Business Profile</h3>
+              {businessId ? (
+                <>
+                  <p style={{ color: 'var(--gray-600)' }}>Customize your public profile page and highlight playlists, offers, or merch.</p>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <Link to={`/publisher/business/${businessId}/page`} className="btn btn-primary">Customize Page</Link>
+                    <Link to={`/business/${businessId}`} className="btn btn-secondary">View Live Page</Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p style={{ color: 'var(--gray-600)' }}>Upgrade to a business account to unlock profile customization.</p>
+                  <Link to="/settings" className="btn btn-secondary">Upgrade</Link>
+                </>
+              )}
+            </div>
+          </div>
         </section>
 
         <section style={{ marginTop: '2rem' }}>
@@ -135,6 +180,7 @@ export default function PublisherDashboard() {
                   <th>Date</th>
                   <th>Tickets Sold</th>
                   <th>Views</th>
+                  <th>Engagement</th>
                   <th>Discounts</th>
                   <th>Page</th>
                   <th></th>
@@ -148,6 +194,18 @@ export default function PublisherDashboard() {
                     <td>{event.date || event.startDate || event.startUtc || 'TBD'}</td>
                     <td>{event.ticketsSold ?? event.stats?.ticketsSold ?? '—'}</td>
                     <td>{event.views ?? event.stats?.views ?? '—'}</td>
+                    <td>
+                      {event.interactions ? (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--gray-800)', lineHeight: 1.6 }}>
+                          <div><strong>Clicks:</strong> {event.interactions.clicks}</div>
+                          <div><strong>Saves:</strong> {event.interactions.saves}</div>
+                          <div><strong>Shares:</strong> {event.interactions.shares}</div>
+                          <div><strong>Tickets:</strong> {event.interactions.ticketClicks}</div>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--gray-500)' }}>—</span>
+                      )}
+                    </td>
                     <td>
                       <button
                         className="btn btn-secondary"

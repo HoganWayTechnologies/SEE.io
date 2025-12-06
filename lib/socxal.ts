@@ -49,6 +49,12 @@ export async function socxalRegister(email: string, password: string, displayNam
   return normalizeAuthResponse(resp.data)
 }
 
+export async function refreshSocxalToken(refreshToken: string) {
+  if (!SOCXAL_BASE) throw new Error('SOCXAL API base URL not configured (NEXT_PUBLIC_SOCXAL_API_URL)')
+  const resp = await axios.post(`${SOCXAL_BASE}/api/Auth/refresh`, { refreshToken })
+  return normalizeAuthResponse(resp.data)
+}
+
 export async function exchangeToFirebase(socxalAccessToken: string) {
   if (!SOCXAL_BASE) throw new Error('SOCXAL API base URL not configured (NEXT_PUBLIC_SOCXAL_API_URL)')
   const resp = await axios.post(`${SOCXAL_BASE}/api/Auth/exchange-to-firebase`, {}, {

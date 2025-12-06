@@ -1,0 +1,4124 @@
+{
+  "info": {
+    "title": "SEE API Endpoints (Web)",
+    "version": "v1",
+    "description": "Frontend-facing endpoints for SEE.io (public, user, and publisher flows). Admin-only routes removed."
+  },
+  "servers": [
+    {
+      "url": "http://seeapi-gddfekhvdkg2fcca.scm.eastus2-01.azurewebsites.net/",
+      "description": "azure-deployment"
+    },
+    {
+      "path": "/v1/venues",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List venues for selectors.",
+      "queryParams": [
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "take",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "VenueDirectoryResponse"
+        }
+      }
+    },
+    {
+      "path": "/v1/hosts",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List hosts for selectors.",
+      "queryParams": [
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "take",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "HostDirectoryResponse"
+        }
+      }
+    },
+    {
+      "path": "/v1/businesses/directory",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Search businesses for dropdowns and selectors.",
+      "queryParams": [
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "take",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "BusinessDirectoryResponse"
+        }
+      }
+    },
+    {
+      "url": "https://localhost:7108",
+      "description": "local-https"
+    },
+    {
+      "url": "http://localhost:5154",
+      "description": "local-http"
+    }
+  ],
+  "endpoints": [
+    {
+      "path": "/v1/businesses/directory",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Search businesses for dropdowns and selectors.",
+      "queryParams": [
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "take",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "BusinessDirectoryResponse"
+        }
+      }
+    },
+    {
+      "path": "/v1/hosts",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List hosts for selectors.",
+      "queryParams": [
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "take",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "HostDirectoryResponse"
+        }
+      }
+    },
+    {
+      "path": "/v1/venues",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List venues for selectors.",
+      "queryParams": [
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "take",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "VenueDirectoryResponse"
+        }
+      }
+    },
+    {
+      "path": "/v1/public/events",
+      "method": "GET",
+      "auth": "anonymous (rate-limited public policy)",
+      "description": "Search public events. Accepts geo, text, and address hints; DB-first then discovery fallback.",
+      "queryParams": [
+        {
+          "name": "lat",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "lng",
+          "type": "number",
+          "required": false,
+          "note": "alias for lon"
+        },
+        {
+          "name": "lon",
+          "type": "number",
+          "required": false,
+          "note": "alias for lng"
+        },
+        {
+          "name": "distanceKm",
+          "type": "integer",
+          "required": false,
+          "note": "alias for radiusKm"
+        },
+        {
+          "name": "radiusKm",
+          "type": "integer",
+          "required": false,
+          "note": "alias for distanceKm"
+        },
+        {
+          "name": "startUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "required": false,
+          "note": "address hint - will geocode if lat/lon missing"
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": false,
+          "note": "address hint - will geocode if lat/lon missing"
+        },
+        {
+          "name": "creatorType",
+          "type": "string",
+          "required": false,
+          "note": "user | business"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "default": "rank",
+          "note": "rank | date | popularity | promoted"
+        },
+        {
+          "name": "includePrivate",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "venue",
+          "type": "string",
+          "required": false,
+          "note": "address hint - will geocode if lat/lon missing"
+        },
+        {
+          "name": "take",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "enableDiscovery",
+          "type": "boolean",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "forceDiscover",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "PagedResult<EventResponse>",
+          "schema": {
+            "items": "EventResponse[]",
+            "nextPageToken": "string | null"
+          }
+        },
+        "429": {
+          "description": "Rate limited"
+        }
+      }
+    },
+    {
+      "path": "/v1/public/events/{id}",
+      "method": "GET",
+      "auth": "anonymous",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventResponse"
+        },
+        "404": {
+          "description": "NotFound"
+        }
+      }
+    },
+    {
+      "path": "/v1/public/events/{id}/share",
+      "method": "GET",
+      "auth": "anonymous",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "id": "string",
+            "shareUrl": "string"
+          }
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/public/events/playlists",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List available curated playlists (Featured, Weekend, etc.).",
+      "responses": {
+        "200": {
+          "schema": "EventPlaylistListResponse"
+        }
+      }
+    },
+    {
+      "path": "/v1/public/events/playlists/{id}",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Fetch a single playlist and its events. Supports optional lat/lon to personalize location-aware playlists.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "lat",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "lng",
+          "type": "number",
+          "required": false,
+          "note": "alias for lon"
+        },
+        {
+          "name": "lon",
+          "type": "number",
+          "required": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPlaylistResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Advanced search with geo and text branches. DB-first, discovery fallback, re-query and return discovered results.",
+      "queryParams": [
+        {
+          "name": "q",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "note": "comma-separated; default active,planning; use attending to pull the signed-in user's RSVPs"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "creatorType",
+          "type": "string",
+          "required": false,
+          "note": "user | business"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "default": "rank",
+          "note": "rank | date | popularity | promoted"
+        },
+        {
+          "name": "includePrivate",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "venue",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "lat",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "lon",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "lng",
+          "type": "number",
+          "required": false,
+          "note": "alias for lon"
+        },
+        {
+          "name": "radiusKm",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "name": "distanceKm",
+          "type": "integer",
+          "required": false,
+          "note": "alias for radiusKm"
+        },
+        {
+          "name": "fromUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "toUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "enableDiscovery",
+          "type": "boolean",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "forceDiscover",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "SearchResults containing items (EventDto[]), count, discovered flag",
+          "schema": {
+            "items": "EventDto[]",
+            "nextPageToken": "string | null",
+            "count": "integer",
+            "discovered": "boolean",
+            "discoveredSaved": "integer | null"
+          }
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{id}",
+      "method": "GET",
+      "auth": "anonymous",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventDto"
+        },
+        "404": {
+          "description": "NotFound"
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/interactions",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Record a client-side interaction (view, click, save, share, ticket-click, map-open) for analytics and ranking.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "requestBody": "EventInteractionRequest",
+      "responses": {
+        "202": {
+          "description": "Accepted"
+        },
+        "400": {
+          "description": "Invalid payload or interaction type"
+        }
+      }
+    },
+    {
+      "path": "/v1/categories",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List taxonomy categories stored in Firestore.",
+      "responses": {
+        "200": {
+          "description": "Array of categories",
+          "schema": "CategoryItem[]"
+        }
+      }
+    },
+    {
+      "path": "/v1/public/reports",
+      "method": "POST",
+      "auth": "API key (x-api-key)",
+      "body": {
+        "schema": "ReportEventRequest"
+      },
+      "responses": {
+        "202": {
+          "schema": {
+            "id": "string"
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
+    },
+    {
+      "path": "/v1/publisher/events",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "body": {
+        "schema": "CreateEventRequest"
+      },
+      "responses": {
+        "201": {
+          "schema": {
+            "id": "string"
+          },
+          "headers": {
+            "Location": "string"
+          }
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateEventRequest"
+      },
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/publish",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/cancel",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/promotion",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPromotionStatusResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/discounts",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventDiscountDto[]"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/discounts",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "EventDiscountRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "EventDiscountDto"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/discounts/{discountId}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "discountId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "EventDiscountRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventDiscountDto"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/discounts/{discountId}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "discountId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/media",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List uploaded event media assets used by the page builder (images, files).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "description": "Filter by logical purpose (background, gallery, general)."
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventMediaItemResponse[]"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/media",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Upload a media asset via multipart/form-data that can be referenced by builder blocks.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "consumes": [
+        "multipart/form-data"
+      ],
+      "notes": "Accepts file plus optional purposes[] form fields indicating background/gallery usage.",
+      "responses": {
+        "201": {
+          "schema": "EventMediaItemResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/media/{mediaId}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Update metadata for a media asset (purposes/tags) without re-uploading.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "mediaId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateEventMediaRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventMediaItemResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/media/{mediaId}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Delete an uploaded media asset and its backing blob.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "mediaId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return draft and published WYSIWYG builder payloads for the event page.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PublisherEventPageResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/catalog",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return builder limits, available block types, preset backgrounds, and uploaded media assets for the editor UI.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PageBuilderCatalogResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Replace the draft WYSIWYG layout for an event. Requires full payload and optional revision concurrency token.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "SaveEventPageRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPageVersionResponse"
+        },
+        "400": {},
+        "404": {},
+        "409": {
+          "description": "revision conflict"
+        }
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/publish",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Publish the current draft layout so the public frontend renders the new content.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "PublishEventPageRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPageVersionResponse"
+        },
+        "400": {},
+        "404": {},
+        "409": {
+          "description": "revision conflict"
+        }
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/preview",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Generate a short-lived preview token so the frontend can render the current draft without publishing.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "EventPagePreviewTokenRequest",
+        "required": false
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPagePreviewTokenResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/history",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return the last 20 published versions of the WYSIWYG event page for auditing/rollback.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPageHistoryResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/history/{versionId}/restore",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Restore a historical version to the draft (optionally publishing immediately).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "versionId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "RestoreEventPageRequest",
+        "required": false
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPageVersionResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/draft",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Discard the current draft and fall back to the latest published version (if any).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PublisherEventPageResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/preview/{token}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Revoke a previously generated preview token.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "token",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/page/usage",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return summary counts for block types and media references across draft/published payloads.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPageUsageResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return draft and published page builder payloads for a business profile.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PublisherEventPageResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/catalog",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return builder config and uploaded business media assets for the profile editor.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PageBuilderCatalogResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Replace the draft business profile layout.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "SaveEventPageRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPageVersionResponse"
+        },
+        "400": {},
+        "404": {},
+        "409": {
+          "description": "revision conflict"
+        }
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/publish",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Publish the current draft business profile layout.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "PublishEventPageRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPageVersionResponse"
+        },
+        "400": {},
+        "404": {},
+        "409": {
+          "description": "revision conflict"
+        }
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/preview",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Generate a preview token for the current business page draft.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "EventPagePreviewTokenRequest",
+        "required": false
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPagePreviewTokenResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/history",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List previous published versions of the business profile for auditing/rollback.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPageHistoryResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/history/{versionId}/restore",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Restore a historical business page version (optionally publishing immediately).",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "versionId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "RestoreEventPageRequest",
+        "required": false
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPageVersionResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/draft",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Discard the business page draft and revert to the last published version.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PublisherEventPageResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/preview/{token}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Revoke a preview token for the business page builder.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "token",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/usage",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return block and media usage counts for a business page draft/published pair.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPageUsageResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/media",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List uploaded media assets for a business (logos, gallery, etc).",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventMediaItemResponse[]"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/media",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Upload a media asset for the business profile (multipart/form-data).",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UploadEventMediaRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "EventMediaItemResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/media/{mediaId}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Update metadata (purposes) for a business media asset.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "mediaId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateEventMediaRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventMediaItemResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/media/{mediaId}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Delete a business media asset (and blob).",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "mediaId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/promotion",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "EventPromotionRequest"
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPromotionStatusResponse"
+        },
+        "400": {
+          "description": "invalid budget/goal combination"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/promotion",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/moderation",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "ModerationStatusResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/WeatherForecast",
+      "method": "GET",
+      "auth": "anonymous",
+      "responses": {
+        "200": {
+          "schema": "WeatherForecast[]"
+        }
+      }
+    },
+    {
+      "path": "/v1/auth/me",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Return the current authenticated user's mapped profile from SEE (uid, email, displayName, socxalId)",
+      "responses": {
+        "200": {
+          "schema": "UserProfile"
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
+    },
+    {
+      "path": "/v1/auth/link-socxal",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Link the currently authenticated user's account to a Socxal id (idempotent).",
+      "body": {
+        "schema": "LinkSocxalRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": {
+            "uid": "string",
+            "socxalId": "string"
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
+    },
+    {
+      "path": "/v1/auth/link-request",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token optional)",
+      "description": "Create a short-lived verification code to link an external provider account to SEE. Authenticated callers infer local UID; otherwise localUserId must be sent in the payload.",
+      "body": {
+        "schema": "LinkRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "LinkRequestResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/auth/link-confirm",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Complete a link request by validating the verification code and persisting the provider mapping.",
+      "body": {
+        "schema": "LinkConfirmRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "LinkConfirmResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/auth/signup",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Create a SEE account (backed by Firebase Auth) and return a Firebase custom token for the new user.",
+      "body": {
+        "schema": "SignupRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "SignupResponse"
+        },
+        "400": {},
+        "503": {}
+      }
+    },
+    {
+      "path": "/v1/auth/signup/business",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Create a SEE account and immediately provision a business profile owned by the new user.",
+      "body": {
+        "schema": "BusinessSignupRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "BusinessSignupResponse"
+        },
+        "400": {},
+        "503": {}
+      }
+    },
+    {
+      "path": "/v1/auth/signin",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Password-based sign in that proxies Firebase IdentityToolkit and returns an ID token plus refresh token.",
+      "body": {
+        "schema": "SigninRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "SigninResponse"
+        },
+        "401": {},
+        "429": {},
+        "503": {}
+      }
+    },
+    {
+      "path": "/v1/auth/exchange-to-firebase",
+      "method": "POST",
+      "auth": "Bearer (trusted internal caller)",
+      "description": "Mint a Firebase custom token for a trusted external identity so the frontend can authenticate with Firebase using SEE-managed credentials.",
+      "body": {
+        "schema": "ExchangeRequest",
+        "required": false
+      },
+      "responses": {
+        "200": {
+          "schema": "ExchangeResponse"
+        },
+        "401": {},
+        "429": {},
+        "500": {}
+      }
+    },
+    {
+      "path": "/v1/auth/magic-link",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Create a magic link token for passwordless sign in.",
+      "body": {
+        "schema": "MagicLinkRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "MagicLinkResponse"
+        },
+        "400": {}
+      }
+    },
+    {
+      "path": "/v1/auth/magic-link/consume",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Consume a magic link token and return a Firebase custom token.",
+      "body": {
+        "schema": "MagicLinkConsumeRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": {
+            "customToken": "string"
+          }
+        },
+        "400": {}
+      }
+    },
+    {
+      "path": "/v1/auth/magic-link/{token}",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Lookup the status of a magic link token (for polling).",
+      "pathParams": [
+        {
+          "name": "token",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "MagicLinkStatusResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/archived-events/{id}",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Fetch a single archived event.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "ArchivedEventResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/sessions",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List active sessions/devices for a SEE user; owners can view their own sessions, admins can scope by id.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserSessionsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/saved",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Return the user's saved/bookmarked events.",
+      "queryParams": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "SavedEventsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/saved/{eventId}",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Save/bookmark an event for the user.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/saved/{eventId}",
+      "method": "DELETE",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Remove a saved/bookmarked event.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/notifications",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List notifications for the user.",
+      "queryParams": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "includeRead",
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "NotificationsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/notifications/{notificationId}",
+      "method": "PATCH",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Mark a notification read/dismissed.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "notificationId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateNotificationRequest",
+        "required": true
+      },
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/tickets",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List tickets the user owns.",
+      "queryParams": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserTicketsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/tickets/{ticketId}",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Get ticket details/QR.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "TicketDetailResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/tickets/{ticketId}/transfer",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Transfer a ticket to another user.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "TransferTicketRequest",
+        "required": true
+      },
+      "responses": {
+        "202": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/events",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List user events by role (attendee or organizer).",
+      "queryParams": [
+        {
+          "name": "role",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserEventsResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/calendar.ics",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "iCal feed of saved/attending events.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "text/calendar"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}",
+      "method": "PATCH",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Update SEE-managed profile fields (display name/contact info).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateUserProfileRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "UserProfile"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/upgrade-to-business",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Create a business owned by the specified user and return the provisioned business details.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "CreateBusinessRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "BusinessDetail"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/preferences",
+      "method": "PUT",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Replace notification and discovery preferences in a single payload.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UserPreferences",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "UserPreferences"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/preferences",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Fetch preferences, creating defaults if missing.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserPreferences"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/business-memberships",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List the businesses the user belongs to (owner/manager/contributor) for badge/switcher UI.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserBusinessMembershipResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/preferences/categories",
+      "method": "PUT",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Save favorite categories used for discovery chips.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "CategoryPreferencesRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "UserPreferences"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/onboarding",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Return onboarding progress for the authenticated user.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "OnboardingStatusResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/onboarding",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Update onboarding progress (steps completed, next step, completion flag).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "SaveOnboardingProgressRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "OnboardingStatusResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/location",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Save onboarding location info (city, state, lat, lon).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "OnboardingLocationRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "OnboardingStatusResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/goals",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Save onboarding goals (what brings you here).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "OnboardingGoalsRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "OnboardingStatusResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/convert-to-business",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Convert the user into a business profile during onboarding.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "ConvertUserToBusinessRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "BusinessDetail"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/business-logo",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Upload a business logo image during onboarding (multipart/form-data).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "description": "multipart/form-data with file plus businessId field"
+      },
+      "responses": {
+        "200": {
+          "schema": "BusinessDetail"
+        },
+        "400": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/preferences/locations",
+      "method": "PUT",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Persist saved search locations and radius maps.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "LocationPreferencesRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "UserPreferences"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/photo",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Upload or replace the user's profile photo (multipart/form-data with file field).",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "photoUrl": "string"
+          }
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/ratings",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List ratings for an event plus summary stats.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventRatingSummary"
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/ratings",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Submit or update the signed-in user's rating for an event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "SubmitEventRatingRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventRatingResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/ratings/me",
+      "method": "DELETE",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Remove the signed-in user's rating for the event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List organizer events with filters for the Publisher Dashboard.",
+      "queryParams": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "note": "comma-separated filter e.g. draft,published"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "fromUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "toUtc",
+          "type": "string (date-time)",
+          "required": false
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "PublisherEventListResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/images",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Upload hero or gallery imagery for an event.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UploadEventImageRequest",
+        "required": true,
+        "note": "multipart/form-data with file plus variant"
+      },
+      "responses": {
+        "202": {
+          "description": "Upload accepted"
+        },
+        "400": {
+          "description": "Validation"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/stats",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Event level metrics for tickets, views, favorites, and reports.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventStatsResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/tasks",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Outstanding compliance or upload tasks for the organizer dashboard.",
+      "responses": {
+        "200": {
+          "schema": "PublisherTaskListResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List ticket types available for a public event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "TicketTypeResponse[]"
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{id}/page",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Return the published WYSIWYG layout for rendering the event page, or pass previewToken to render an unpublished draft.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "previewToken",
+          "type": "string",
+          "required": false,
+          "description": "Token issued by the publisher preview endpoint"
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPagePublicResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/businesses/{businessId}/page",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Return the published business profile page or preview a draft when previewToken is provided.",
+      "pathParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "previewToken",
+          "type": "string",
+          "required": false,
+          "description": "Token issued by the business page preview endpoint"
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPagePublicResponse"
+        },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/purchase",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Purchase a quantity of a ticket type for the signed-in user.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "PurchaseTicketsRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "TicketPurchaseResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/checkout/stripe",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Create a Stripe PaymentIntent for ticket checkout.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "PurchaseTicketsRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "StripeCheckoutResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/barcode",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Return a short-lived, opaque barcode/QR payload for the user's owned ticket.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "type": "string",
+            "payload": "string",
+            "expiresAt": "string (date-time)",
+            "nonce": "string"
+          }
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/barcode",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Rotate/regenerate the ticket's barcode/QR payload (e.g., when lost/compromised).",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "type": "string",
+            "payload": "string",
+            "expiresAt": "string (date-time)",
+            "nonce": "string"
+          }
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/webhooks/stripe",
+      "method": "POST",
+      "auth": "anonymous (Stripe)",
+      "description": "Stripe webhook endpoint used to finalize ticket purchases.",
+      "responses": {
+        "200": {},
+        "400": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/tickets",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List ticket types for a publisher-owned event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "TicketTypeResponse[]"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/tickets",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Create a ticket type for an event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "CreateTicketTypeRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "TicketTypeResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/tickets/{ticketId}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Update a ticket type's pricing or inventory.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "UpdateTicketTypeRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "TicketTypeResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/tickets/{ticketId}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Delete a ticket type from an event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/orders",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List orders/purchases for an event.",
+      "queryParams": [
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "OrderListResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{id}/attendees",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Attendee roster/check-in data for an event.",
+      "queryParams": [
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 50
+        },
+        {
+          "name": "pageToken",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "AttendeeListResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/events/{eventId}/interactions",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Aggregate interaction analytics (views, clicks, saves, shares, ticket clicks, map opens) for a publisher-owned event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventInteractionSummaryResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/reviews",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List approved reviews for a public event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventReviewResponse[]"
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/reviews",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Submit a new review that enters moderation.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "SubmitEventReviewRequest",
+        "required": true
+      },
+      "responses": {
+        "202": {
+          "schema": "EventReviewResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/rsvp",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Get the signed-in user's RSVP status for an event (none|going|interested|bookmark).",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": {
+            "status": "string"
+          }
+        },
+        "401": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/rsvp",
+      "method": "PUT",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Set the signed-in user's RSVP status (going|interested|bookmark|none).",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "RsvpRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": {
+            "status": "string"
+          }
+        },
+        "400": {},
+        "401": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/rsvp/summary",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Return counts for going/interested/bookmarked for an event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventRsvpSummaryResponse"
+        }
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/refund",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Request a refund for a ticket purchase (subject to refund cutoff). Admins can force.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "RefundTicketRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "TicketRefundResponse"
+        },
+        "400": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/resend",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Resend ticket delivery email/SMS to the purchaser.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticketId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "202": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/verify",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Validate a ticket barcode token and optionally mark check-in.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "VerifyTicketRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "VerifyTicketResponse"
+        },
+        "400": {},
+        "401": {},
+        "404": {}
+      }
+    }
+  ],
+  "schemas": {
+    "VenueRef": {
+      "name": "string",
+      "address": "string | null",
+      "lat": "number | null",
+      "lng": "number | null"
+    },
+    "CreateEventRequest": {
+      "title": "string",
+      "description": "string | null",
+      "startUtc": "string (date-time)",
+      "endUtc": "string (date-time)",
+      "timezone": "string",
+      "venue": "VenueRef",
+      "category": "string",
+      "tags": "string[]",
+      "admissionType": "\"open\" | \"free\" | \"see_ticketed\" | \"external_ticketed\" (default \"open\")",
+      "externalTicketUrl": "string | null"
+    },
+    "UpdateEventRequest": "CreateEventRequest + { verified: boolean }",
+    "EventResponse": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "startUtc": "string (date-time)",
+      "endUtc": "string (date-time)",
+      "timezone": "string",
+      "venue": "VenueRef",
+      "category": "string",
+      "tags": "string[]",
+      "verified": "boolean",
+      "status": "string",
+      "admissionType": "string",
+      "hasInternalTickets": "boolean",
+      "externalTicketUrl": "string | null",
+      "shareUrl": "string | null",
+      "promoted": "boolean",
+      "promotion": "EventPromotionResponse | null",
+      "moderationStatus": "string",
+      "moderationNotes": "string | null",
+      "moderationUpdatedAtUtc": "string (date-time) | null",
+      "discounts": "EventDiscountResponse[]",
+      "hasCustomPage": "boolean",
+      "pageVersionId": "string | null",
+      "pageUpdatedAtUtc": "string (date-time) | null"
+    },
+    "EventDto": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "startUtc": "string (date-time)",
+      "endUtc": "string | null",
+      "timezone": "string | null",
+      "category": "string",
+      "tags": "string[]",
+      "status": "string",
+      "admissionType": "string",
+      "hasInternalTickets": "boolean",
+      "externalTicketUrl": "string | null",
+      "venueName": "string | null",
+      "venueAddress": "string | null",
+      "imageUrl": "string | null",
+      "lat": "number | null",
+      "lon": "number | null",
+      "geoHash": "string | null",
+      "state": "string | null",
+      "hasCustomPage": "boolean",
+      "pageVersionId": "string | null",
+      "pageUpdatedAtUtc": "string (date-time) | null"
+    },
+    "EventPageBlockResponse": {
+      "id": "string",
+      "type": "string",
+      "order": "integer",
+      "settings": "object",
+      "children": "EventPageBlockResponse[]"
+    },
+    "EventPageVersionResponse": {
+      "versionId": "string",
+      "revision": "integer",
+      "theme": "string",
+      "palette": "string | null",
+      "updatedAtUtc": "string (date-time)",
+      "publishedAtUtc": "string (date-time) | null",
+      "updatedBy": "string | null",
+      "blocks": "EventPageBlockResponse[]"
+    },
+    "PublisherEventPageResponse": {
+      "draft": "EventPageVersionResponse | null",
+      "published": "EventPageVersionResponse | null",
+      "hasUnpublishedChanges": "boolean"
+    },
+    "EventPagePublicResponse": {
+      "page": "EventPageVersionResponse | null",
+      "preview": "boolean"
+    },
+    "EventPageHistoryResponse": {
+      "history": "EventPageVersionResponse[]"
+    },
+    "EventPagePreviewTokenRequest": {
+      "expiresInSeconds": "integer | null"
+    },
+    "EventPagePreviewTokenResponse": {
+      "token": "string",
+      "expiresAtUtc": "string (date-time)",
+      "version": "EventPageVersionResponse"
+    },
+    "EventPageBlockRequest": {
+      "id": "string | null",
+      "type": "string",
+      "order": "integer",
+      "settings": "object",
+      "children": "EventPageBlockRequest[]"
+    },
+    "SaveEventPageRequest": {
+      "theme": "string",
+      "palette": "string | null",
+      "blocks": "EventPageBlockRequest[]",
+      "expectedRevision": "integer | null"
+    },
+    "PublishEventPageRequest": {
+      "expectedRevision": "integer | null"
+    },
+    "RestoreEventPageRequest": {
+      "publish": "boolean"
+    },
+    "PageBuilderCatalogResponse": {
+      "limits": "PageBuilderLimitResponse",
+      "blocks": "PageBuilderBlockDefinitionResponse[]",
+      "backgrounds": "PageBuilderBackgroundPresetResponse[]",
+      "media": "EventMediaItemResponse[]"
+    },
+    "PageBuilderLimitResponse": {
+      "maxBlocks": "integer",
+      "maxDepth": "integer",
+      "maxSettingsBytes": "integer",
+      "maxHistoryEntries": "integer",
+      "minPreviewSeconds": "integer",
+      "maxPreviewSeconds": "integer",
+      "defaultPreviewSeconds": "integer"
+    },
+    "PageBuilderBlockDefinitionResponse": {
+      "type": "string",
+      "label": "string",
+      "category": "string",
+      "description": "string",
+      "icon": "string",
+      "allowChildren": "boolean",
+      "supportsMedia": "boolean",
+      "supportsBackground": "boolean",
+      "requireMedia": "boolean",
+      "maxChildren": "integer | null",
+      "allowedChildTypes": "string[]",
+      "requiredSettings": "string[]",
+      "tags": "string[]"
+    },
+    "PageBuilderBackgroundPresetResponse": {
+      "id": "string",
+      "label": "string",
+      "kind": "string",
+      "colors": "string[]",
+      "url": "string | null",
+      "tags": "string[]"
+    },
+    "EventMediaItemResponse": {
+      "id": "string",
+      "url": "string",
+      "fileName": "string",
+      "contentType": "string",
+      "size": "integer",
+      "kind": "string",
+      "createdBy": "string",
+      "createdAtUtc": "string (date-time)",
+      "purposes": "string[]"
+    },
+    "UpdateEventMediaRequest": {
+      "purposes": "string[]"
+    },
+    "EventPageUsageResponse": {
+      "eventId": "string",
+      "hasDraft": "boolean",
+      "hasPublished": "boolean",
+      "draftRevision": "integer | null",
+      "publishedRevision": "integer | null",
+      "draftUpdatedAtUtc": "string (date-time) | null",
+      "publishedUpdatedAtUtc": "string (date-time) | null",
+      "blocks": "EventPageBlockUsage[]",
+      "media": "EventPageMediaUsage[]"
+    },
+    "EventPageBlockUsage": {
+      "type": "string",
+      "draftCount": "integer",
+      "publishedCount": "integer"
+    },
+    "EventPageMediaUsage": {
+      "mediaId": "string",
+      "referencedInDraft": "boolean",
+      "referencedInPublished": "boolean"
+    },
+    "EventDiscountRequest": {
+      "name": "string",
+      "description": "string | null",
+      "promoCode": "string | null",
+      "url": "string | null",
+      "percentOff": "number | null",
+      "amountOff": "number | null",
+      "currency": "string",
+      "expiresAtUtc": "string (date-time) | null",
+      "active": "boolean"
+    },
+    "EventDiscountDto": "EventDiscountRequest + { id: string }",
+    "ReportEventRequest": {
+      "eventId": "string",
+      "category": "string",
+      "notes": "string | null"
+    },
+    "CategoryItem": {
+      "id": "string",
+      "name": "string",
+      "tags": "string[]"
+    },
+    "CategorySeedItem": {
+      "path": "string | null",
+      "name": "string | null",
+      "keywords": "string[] | null",
+      "tags": "string[] | null",
+      "updatedAt": "string (date-time) | null"
+    },
+    "CreateKeyRequest": {
+      "role": "string",
+      "ownerId": "string | null",
+      "perMinuteLimit": "integer | null",
+      "expiresAt": "string(date-time) | null"
+    },
+    "CreateKeyResponse": {
+      "id": "string",
+      "apiKey": "string",
+      "role": "string",
+      "last4": "string",
+      "keyId": "string"
+    },
+    "WeatherForecast": {
+      "date": "date",
+      "temperatureC": "integer",
+      "summary": "string"
+    },
+    "UserProfile": {
+      "uid": "string",
+      "email": "string | null",
+      "displayName": "string | null",
+      "socxalId": "string | null",
+      "phoneNumber": "string | null",
+      "allowContact": "boolean",
+      "photoUrl": "string | null"
+    },
+    "LinkSocxalRequest": {
+      "socxalId": "string"
+    },
+    "LinkRequest": {
+      "externalProvider": "string",
+      "externalUid": "string",
+      "localUserId": "string | null"
+    },
+    "LinkRequestResponse": {
+      "requestId": "string",
+      "code": "string",
+      "expiresIn": "integer"
+    },
+    "LinkConfirmRequest": {
+      "requestId": "string",
+      "code": "string"
+    },
+    "LinkConfirmResponse": {
+      "provider": "string",
+      "externalUid": "string",
+      "localUserId": "string"
+    },
+    "SignupRequest": {
+      "email": "string",
+      "password": "string",
+      "displayName": "string | null"
+    },
+    "SignupResponse": {
+      "uid": "string",
+      "customToken": "string"
+    },
+    "BusinessSignupRequest": {
+      "email": "string",
+      "password": "string",
+      "displayName": "string | null",
+      "business": "CreateBusinessRequest"
+    },
+    "BusinessSignupResponse": {
+      "uid": "string",
+      "customToken": "string",
+      "business": "BusinessDetail"
+    },
+    "MagicLinkRequest": {
+      "email": "string",
+      "redirectUrl": "string | null"
+    },
+    "MagicLinkResponse": {
+      "token": "string",
+      "expiresAtUtc": "string (date-time)"
+    },
+    "MagicLinkConsumeRequest": {
+      "token": "string"
+    },
+    "MagicLinkStatusResponse": {
+      "token": "string",
+      "email": "string",
+      "expiresAtUtc": "string (date-time)",
+      "consumed": "boolean",
+      "consumedAtUtc": "string (date-time) | null",
+      "redirectUrl": "string | null"
+    },
+    "CreateBusinessRequest": {
+      "name": "string",
+      "slug": "string | null",
+      "type": "string | null",
+      "description": "string | null",
+      "logoUrl": "string | null",
+      "coverPhotoUrl": "string | null",
+      "contactEmail": "string | null",
+      "contactPhone": "string | null",
+      "website": "string | null",
+      "address": "string | null",
+      "city": "string | null",
+      "state": "string | null",
+      "country": "string | null"
+    },
+    "BusinessDetail": {
+      "id": "string",
+      "name": "string",
+      "slug": "string",
+      "logoUrl": "string | null",
+      "city": "string | null",
+      "state": "string | null",
+      "verified": "boolean",
+      "role": "string",
+      "status": "string",
+      "description": "string | null",
+      "type": "string | null",
+      "coverPhotoUrl": "string | null",
+      "contactEmail": "string | null",
+      "contactPhone": "string | null",
+      "website": "string | null",
+      "address": "string | null",
+      "country": "string | null",
+      "createdAtUtc": "string",
+      "updatedAtUtc": "string"
+    },
+    "BusinessDirectoryResponse": {
+      "items": "BusinessDirectoryItem[]"
+    },
+    "BusinessDirectoryItem": {
+      "id": "string",
+      "name": "string",
+      "city": "string | null",
+      "state": "string | null",
+      "logoUrl": "string | null",
+      "type": "string | null",
+      "verified": "boolean"
+    },
+    "UserBusinessMembershipResponse": {
+      "items": "UserBusinessMembershipItem[]"
+    },
+    "UserBusinessMembershipItem": {
+      "businessId": "string",
+      "businessName": "string",
+      "businessSlug": "string",
+      "logoUrl": "string | null",
+      "city": "string | null",
+      "state": "string | null",
+      "role": "string",
+      "status": "string"
+    },
+    "SigninRequest": {
+      "email": "string",
+      "password": "string"
+    },
+    "SigninResponse": {
+      "idToken": "string",
+      "refreshToken": "string",
+      "expiresIn": "string",
+      "uid": "string | null"
+    },
+    "ExchangeRequest": {
+      "externalUid": "string | null"
+    },
+    "ExchangeResponse": {
+      "firebaseToken": "string",
+      "uid": "string"
+    },
+    "ClaimsMap": {
+      "description": "map of claimName->claimValue (string->string)",
+      "example": {
+        "role": "publisher",
+        "tenant": "acme"
+      }
+    },
+    "ClaimsArray": {
+      "description": "Array of role identifiers assigned to the user",
+      "items": "string"
+    },
+    "UserSession": {
+      "id": "string",
+      "device": "string",
+      "ip": "string | null",
+      "location": "string | null",
+      "createdUtc": "string (date-time)",
+      "lastSeenUtc": "string (date-time)",
+      "current": "boolean"
+    },
+    "UserSessionsResponse": {
+      "sessions": "UserSession[]",
+      "activeCount": "integer"
+    },
+    "UpdateUserProfileRequest": {
+      "displayName": "string | null",
+      "phoneNumber": "string | null",
+      "email": "string | null",
+      "allowContact": "boolean | null"
+    },
+    "NotificationPreferences": {
+      "email": "boolean",
+      "push": "boolean",
+      "sms": "boolean"
+    },
+    "DiscoveryPreferences": {
+      "defaultRadiusKm": "integer | null",
+      "enableDiscovery": "boolean",
+      "forceDiscover": "boolean"
+    },
+    "UserPreferences": {
+      "notifications": "NotificationPreferences",
+      "discovery": "DiscoveryPreferences",
+      "favoriteCategories": "string[]",
+      "savedLocations": "SavedLocation[]"
+    },
+    "CategoryPreferencesRequest": {
+      "favoriteCategories": "string[]"
+    },
+    "SavedLocation": {
+      "label": "string",
+      "lat": "number",
+      "lon": "number",
+      "radiusKm": "integer",
+      "city": "string | null",
+      "state": "string | null"
+    },
+    "LocationPreferencesRequest": {
+      "savedLocations": "SavedLocation[]"
+    },
+    "SaveOnboardingProgressRequest": {
+      "steps": "map<string, boolean> | null",
+      "nextStep": "string | null",
+      "completed": "boolean | null"
+    },
+    "OnboardingLocationRequest": {
+      "city": "string",
+      "state": "string",
+      "lat": "number",
+      "lon": "number"
+    },
+    "OnboardingGoalsRequest": {
+      "goals": "string[]"
+    },
+    "ConvertUserToBusinessRequest": {
+      "businessName": "string",
+      "website": "string | null",
+      "category": "string | null",
+      "city": "string | null",
+      "state": "string | null",
+      "bio": "string | null"
+    },
+    "OnboardingStatusResponse": {
+      "completed": "boolean",
+      "nextStep": "string | null",
+      "steps": "map<string, boolean>",
+      "goals": "string[]",
+      "location": "OnboardingLocation | null",
+      "updatedAtUtc": "string (date-time)"
+    },
+    "OnboardingLocation": {
+      "city": "string",
+      "state": "string",
+      "lat": "number",
+      "lon": "number"
+    },
+    "PublisherEventSummary": {
+      "id": "string",
+      "title": "string",
+      "startUtc": "string (date-time)",
+      "status": "string",
+      "admissionType": "string",
+      "hasInternalTickets": "boolean",
+      "ticketsSold": "integer",
+      "views": "integer",
+      "heroImageUrl": "string | null",
+      "promoted": "boolean",
+      "moderationStatus": "string"
+    },
+    "PublisherEventListResponse": {
+      "items": "PublisherEventSummary[]",
+      "page": "integer",
+      "pageSize": "integer",
+      "total": "integer",
+      "nextPageToken": "string | null"
+    },
+    "UploadEventImageRequest": {
+      "description": "multipart/form-data payload with file (binary) and variant hero|gallery"
+    },
+    "ArchivableEventSummary": {
+      "id": "string",
+      "title": "string",
+      "startUtc": "string (date-time)",
+      "endUtc": "string (date-time) | null",
+      "status": "string",
+      "hasImage": "boolean"
+    },
+    "ArchivableEventsResponse": {
+      "cutoffUtc": "string (date-time)",
+      "items": "ArchivableEventSummary[]"
+    },
+    "ArchiveRunRequest": {
+      "olderThanDays": "integer | null",
+      "limit": "integer | null"
+    },
+    "ArchiveRunResponse": {
+      "attempted": "integer",
+      "archived": "integer",
+      "skipped": "integer",
+      "cutoffUtc": "string (date-time)"
+    },
+    "ArchiveCleanupRequest": {
+      "limit": "integer | null"
+    },
+    "ArchiveCleanupResponse": {
+      "processed": "integer",
+      "deletedImages": "integer",
+      "failures": "integer"
+    },
+    "ArchivedEventResponse": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "category": "string",
+      "tags": "string[]",
+      "startUtc": "string (date-time)",
+      "endUtc": "string (date-time)",
+      "timezone": "string",
+      "hasImage": "boolean",
+      "imageUrl": "string | null",
+      "archivedAtUtc": "string (date-time) | null"
+    },
+    "VenueDirectoryResponse": {
+      "items": "VenueDirectoryItem[]"
+    },
+    "VenueDirectoryItem": {
+      "id": "string",
+      "name": "string",
+      "address": "string | null",
+      "lat": "number | null",
+      "lon": "number | null",
+      "verified": "boolean"
+    },
+    "HostDirectoryResponse": {
+      "items": "HostDirectoryItem[]"
+    },
+    "HostDirectoryItem": {
+      "id": "string",
+      "name": "string",
+      "type": "string | null",
+      "siteUrl": "string | null",
+      "verified": "boolean"
+    },
+    "EventStatsResponse": {
+      "views": "integer",
+      "ticketsSold": "integer",
+      "favorites": "integer",
+      "shares": "integer",
+      "reportCount": "integer"
+    },
+    "PublisherTaskItem": {
+      "id": "string",
+      "type": "string",
+      "eventId": "string | null",
+      "summary": "string",
+      "state": "string",
+      "dueUtc": "string (date-time) | null"
+    },
+    "PublisherTaskListResponse": {
+      "items": "PublisherTaskItem[]",
+      "outstanding": "integer"
+    },
+    "AdminReportSummary": {
+      "id": "string",
+      "eventId": "string",
+      "category": "string",
+      "status": "string",
+      "submittedBy": "string | null",
+      "createdUtc": "string (date-time)"
+    },
+    "PagedAdminReportSummary": {
+      "items": "AdminReportSummary[]",
+      "page": "integer",
+      "pageSize": "integer",
+      "total": "integer"
+    },
+    "ReportTimelineEvent": {
+      "status": "string",
+      "notes": "string | null",
+      "actor": "string",
+      "timestampUtc": "string (date-time)"
+    },
+    "AdminReportDetail": {
+      "report": "AdminReportSummary",
+      "notes": "string | null",
+      "timeline": "ReportTimelineEvent[]",
+      "attachments": "string[]"
+    },
+    "UpdateReportStatusRequest": {
+      "status": "string",
+      "notes": "string | null",
+      "assignee": "string | null"
+    },
+    "AdminEventDetail": "EventDto + { visibility: string, reports: AdminReportSummary[] }",
+    "SocxalIdentity": {
+      "uid": "string",
+      "email": "string | null",
+      "displayName": "string | null",
+      "roles": "string[]",
+      "socxalId": "string | null"
+    },
+    "SocxalResetPasswordRequest": {
+      "email": "string",
+      "redirectUri": "string | null"
+    },
+    "SocxalUpdateProfileRequest": {
+      "displayName": "string | null",
+      "phoneNumber": "string | null",
+      "photoUrl": "string | null"
+    },
+    "EventSourceConfig": {
+      "id": "string",
+      "name": "string",
+      "type": "string",
+      "enabled": "boolean",
+      "hostPattern": "string | null",
+      "maxUrls": "integer",
+      "maxCreates": "integer",
+      "priority": "integer",
+      "settings": "map"
+    },
+    "IngestionPlan": {
+      "id": "string",
+      "name": "string",
+      "city": "string | null",
+      "cseQueries": "string[]",
+      "icsFeeds": "string[]",
+      "enabled": "boolean"
+    },
+    "GrouponDealConfig": {
+      "enabled": "boolean",
+      "intervalSeconds": "integer",
+      "maxDealsPerMarket": "integer",
+      "matchRadiusKm": "integer",
+      "matchCandidates": "integer",
+      "matchThreshold": "number",
+      "eventKeywords": "string[]",
+      "markets": "GrouponMarketConfig[]"
+    },
+    "GrouponMarketConfig": {
+      "id": "string",
+      "name": "string",
+      "divisionId": "string | null",
+      "city": "string | null",
+      "lat": "number | null",
+      "lon": "number | null",
+      "radiusKm": "integer",
+      "query": "string | null",
+      "limit": "integer | null",
+      "enabled": "boolean"
+    },
+    "HtmlScraperConfig": {
+      "id": "string",
+      "name": "string",
+      "enabled": "boolean",
+      "baseUrl": "string",
+      "hostPattern": "string | null",
+      "listXPath": "string",
+      "titleXPath": "string",
+      "titleAttribute": "string | null",
+      "descriptionXPath": "string | null",
+      "descriptionAttribute": "string | null",
+      "startXPath": "string",
+      "startAttribute": "string | null",
+      "endXPath": "string | null",
+      "endAttribute": "string | null",
+      "linkXPath": "string | null",
+      "linkAttribute": "string | null",
+      "imageXPath": "string | null",
+      "imageAttribute": "string | null",
+      "venueNameXPath": "string | null",
+      "venueNameAttribute": "string | null",
+      "venueAddressXPath": "string | null",
+      "venueAddressAttribute": "string | null",
+      "timezone": "string",
+      "category": "string",
+      "tags": "string[]",
+      "defaultCity": "string | null",
+      "defaultState": "string | null",
+      "alwaysUseBaseUrl": "boolean"
+    },
+    "SubmitEventRatingRequest": {
+      "rating": "integer (1-5)",
+      "review": "string | null"
+    },
+    "EventRatingResponse": {
+      "id": "string",
+      "eventId": "string",
+      "userId": "string",
+      "userDisplayName": "string | null",
+      "rating": "integer",
+      "review": "string | null",
+      "updatedAtUtc": "string (date-time)"
+    },
+    "EventRatingSummary": {
+      "average": "number",
+      "count": "integer",
+      "items": "EventRatingResponse[]",
+      "userRating": "EventRatingResponse | null"
+    },
+    "CreateTicketTypeRequest": {
+      "name": "string",
+      "description": "string | null",
+      "price": "number",
+      "currency": "string",
+      "quantityTotal": "integer",
+      "salesStartUtc": "string (date-time) | null",
+      "salesEndUtc": "string (date-time) | null"
+    },
+    "UpdateTicketTypeRequest": "CreateTicketTypeRequest",
+    "TicketTypeResponse": {
+      "id": "string",
+      "eventId": "string",
+      "name": "string",
+      "description": "string | null",
+      "price": "number",
+      "currency": "string",
+      "quantityTotal": "integer",
+      "quantityAvailable": "integer",
+      "salesStartUtc": "string (date-time) | null",
+      "salesEndUtc": "string (date-time) | null"
+    },
+    "PurchaseTicketsRequest": {
+      "quantity": "integer",
+      "checkoutId": "string | null",
+      "recipientEmail": "string | null",
+      "recipientPhone": "string | null"
+    },
+    "RefundTicketRequest": {
+      "reason": "string | null",
+      "force": "boolean"
+    },
+    "TicketRefundResponse": {
+      "id": "string",
+      "status": "string",
+      "refundedAt": "string (date-time) | null",
+      "quantityRestored": "integer"
+    },
+    "TicketPurchaseResponse": {
+      "id": "string",
+      "ticketId": "string",
+      "eventId": "string",
+      "userId": "string",
+      "quantity": "integer",
+      "totalPaid": "number",
+      "createdAtUtc": "string (date-time)"
+    },
+    "StripeCheckoutResponse": {
+      "checkoutId": "string",
+      "paymentIntentId": "string",
+      "clientSecret": "string",
+      "amount": "integer",
+      "currency": "string",
+      "status": "string"
+    },
+    "VerifyTicketRequest": {
+      "token": "string",
+      "checkIn": "boolean"
+    },
+    "VerifyTicketResponse": {
+      "valid": "boolean",
+      "purchaseId": "string",
+      "eventId": "string",
+      "userId": "string",
+      "status": "string",
+      "checkedIn": "boolean",
+      "alreadyCheckedIn": "boolean",
+      "checkedInAt": "string (date-time) | null",
+      "expiresAtUtc": "string (date-time) | null"
+    },
+    "SubmitEventReviewRequest": {
+      "title": "string",
+      "body": "string"
+    },
+    "EventReviewResponse": {
+      "id": "string",
+      "eventId": "string",
+      "userId": "string",
+      "userDisplayName": "string | null",
+      "title": "string",
+      "body": "string",
+      "status": "string",
+      "createdAtUtc": "string (date-time)",
+      "updatedAtUtc": "string (date-time)"
+    },
+    "AdminEventReviewSummary": {
+      "id": "string",
+      "title": "string",
+      "body": "string",
+      "userDisplayName": "string | null",
+      "status": "string",
+      "createdAtUtc": "string (date-time)"
+    },
+    "SavedEventItem": {
+      "id": "string",
+      "eventId": "string",
+      "savedAtUtc": "string (date-time)",
+      "event": "EventDto | null"
+    },
+    "SavedEventsResponse": {
+      "items": "SavedEventItem[]",
+      "nextPageToken": "string | null"
+    },
+    "NotificationItem": {
+      "id": "string",
+      "title": "string",
+      "body": "string",
+      "type": "string",
+      "createdUtc": "string (date-time)",
+      "read": "boolean",
+      "readAtUtc": "string (date-time) | null",
+      "metadata": "map | null"
+    },
+    "NotificationsResponse": {
+      "items": "NotificationItem[]",
+      "nextPageToken": "string | null"
+    },
+    "UpdateNotificationRequest": {
+      "read": "boolean | null"
+    },
+    "UserTicketSummary": {
+      "id": "string",
+      "eventId": "string",
+      "eventTitle": "string",
+      "eventStartUtc": "string (date-time)",
+      "status": "string",
+      "qrCode": "string | null",
+      "claimCode": "string | null"
+    },
+    "UserTicketsResponse": {
+      "items": "UserTicketSummary[]",
+      "nextPageToken": "string | null"
+    },
+    "TicketDetailResponse": "UserTicketSummary + { seat: string | null, eventVenue: string | null }",
+    "TransferTicketRequest": {
+      "toUserId": "string | null",
+      "toEmail": "string | null"
+    },
+    "UserEventsResponse": {
+      "items": "EventDto[]",
+      "nextPageToken": "string | null"
+    },
+    "OrderSummary": {
+      "id": "string",
+      "purchaserId": "string",
+      "quantity": "integer",
+      "totalPaid": "number",
+      "status": "string",
+      "createdAtUtc": "string (date-time)"
+    },
+    "OrderListResponse": {
+      "items": "OrderSummary[]",
+      "nextPageToken": "string | null"
+    },
+    "AttendeeItem": {
+      "ticketId": "string",
+      "userId": "string",
+      "displayName": "string | null",
+      "status": "string",
+      "checkedIn": "boolean",
+      "checkedInAtUtc": "string (date-time) | null"
+    },
+    "AttendeeListResponse": {
+      "items": "AttendeeItem[]",
+      "nextPageToken": "string | null"
+    },
+    "EventInteractionRequest": {
+      "type": "string (view|click|save|bookmark|share|ticket|map)",
+      "source": "string | null",
+      "metadata": "string | null"
+    },
+    "EventInteractionSummaryResponse": {
+      "eventId": "string",
+      "views": "integer",
+      "clicks": "integer",
+      "saves": "integer",
+      "bookmarks": "integer",
+      "shares": "integer",
+      "ticketClicks": "integer",
+      "mapOpens": "integer"
+    },
+    "RsvpRequest": {
+      "status": "string"
+    },
+    "EventRsvpSummaryResponse": {
+      "going": "integer",
+      "interested": "integer",
+      "bookmarked": "integer",
+      "updatedAt": "string (date-time)"
+    },
+    "EventRsvpDoc": {
+      "id": "string",
+      "eventId": "string",
+      "userId": "string",
+      "status": "string",
+      "createdAt": "string (date-time)",
+      "updatedAt": "string (date-time)"
+    },
+    "EventPlaylistSummary": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "requiresLocation": "boolean"
+    },
+    "EventPlaylistListResponse": {
+      "items": "EventPlaylistSummary[]"
+    },
+    "EventPlaylistResponse": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "items": "EventResponse[]"
+    },
+    "EventPlaylistAdminResponse": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "query": "string | null",
+      "category": "string | null",
+      "creatorType": "string | null",
+      "sort": "string",
+      "maxEvents": "integer",
+      "daysFromOffset": "integer",
+      "daysToOffset": "integer",
+      "radiusKm": "integer | null",
+      "includePrivate": "boolean",
+      "requiresLocation": "boolean",
+      "defaultLat": "number | null",
+      "defaultLon": "number | null",
+      "city": "string | null",
+      "state": "string | null",
+      "enabled": "boolean",
+      "displayOrder": "integer"
+    },
+    "EventPlaylistUpsertRequest": {
+      "title": "string",
+      "description": "string | null",
+      "query": "string | null",
+      "category": "string | null",
+      "creatorType": "string | null",
+      "sort": "string",
+      "maxEvents": "integer",
+      "daysFromOffset": "integer",
+      "daysToOffset": "integer",
+      "radiusKm": "integer | null",
+      "includePrivate": "boolean",
+      "requiresLocation": "boolean",
+      "defaultLat": "number | null",
+      "defaultLon": "number | null",
+      "city": "string | null",
+      "state": "string | null",
+      "enabled": "boolean",
+      "displayOrder": "integer"
+    },
+    "NotificationTemplateDoc": {
+      "id": "string",
+      "subject": "string",
+      "htmlBody": "string",
+      "textBody": "string",
+      "updatedAt": "string (date-time)"
+    },
+    "TicketInventoryAuditDoc": {
+      "id": "string",
+      "eventId": "string",
+      "ticketId": "string",
+      "userId": "string",
+      "delta": "integer",
+      "quantityAvailableAfter": "integer",
+      "reason": "string",
+      "checkoutSessionId": "string | null",
+      "purchaseId": "string | null",
+      "createdAt": "string (date-time)"
+    },
+    "SeedConfigResponse": {
+      "results": "SeedResult[]"
+    },
+    "SeedResult": {
+      "key": "string",
+      "status": "string",
+      "message": "string | null"
+    }
+  }
+}

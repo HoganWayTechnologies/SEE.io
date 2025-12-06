@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import UserMenu from '../components/UserMenu'
 import EventGrid from '../components/EventGrid'
 import { api, Event, formatEventsForDisplay, getUserIdFromProfile } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import SiteNav from '../components/SiteNav'
 
 const mockSaved: Event[] = [
   { id: 'save-1', title: 'Sunset Rooftop Sessions', date: 'Dec 12, 2025', location: 'Austin, TX', category: 'Music' },
@@ -45,16 +45,13 @@ export default function SavedPage() {
 
   return (
     <div>
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/saved" className="nav-link active">Saved</Link>
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        activePath="/saved"
+        links={[
+          { to: '/discover', label: 'Discover' },
+          { to: '/saved', label: 'Saved' }
+        ]}
+      />
 
       <div className="container" style={{ padding: '3rem 0' }}>
         <div style={{ marginBottom: '1.5rem' }}>

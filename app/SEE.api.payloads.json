@@ -1,0 +1,456 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Example payload shapes for SEE API request bodies so the frontend can validate outgoing requests. All fields marked null are optional.",
+  "payloads": {
+    "SignupRequest": {
+      "email": "user@example.com",
+      "password": "StrongPassword123!",
+      "displayName": "Jane Doe"
+    },
+    "SigninRequest": {
+      "email": "user@example.com",
+      "password": "StrongPassword123!"
+    },
+    "BusinessSignupRequest": {
+      "email": "user@example.com",
+      "password": "StrongPassword123!",
+      "displayName": "Jane Doe",
+      "business": {
+        "name": "Acme Events",
+        "slug": "acme-events",
+        "type": "nightlife",
+        "description": "We host rooftop parties.",
+        "logoUrl": "https://cdn.example.com/logo.png",
+        "coverPhotoUrl": "https://cdn.example.com/cover.jpg",
+        "contactEmail": "contact@acme.com",
+        "contactPhone": "+16175554444",
+        "website": "https://acme.com",
+        "address": "123 Main St",
+        "city": "Boston",
+        "state": "MA",
+        "country": "US"
+      }
+    },
+    "LinkRequest": {
+      "externalProvider": "socxal",
+      "externalUid": "abc123",
+      "localUserId": "uid_optional_when_authed"
+    },
+    "LinkConfirmRequest": {
+      "requestId": "lr_12345",
+      "code": "123456"
+    },
+    "MagicLinkRequest": {
+      "email": "user@example.com",
+      "redirectUrl": "https://app.see.events/auth/magic"
+    },
+    "MagicLinkConsumeRequest": {
+      "token": "ml_1234567890"
+    },
+    "CreateBusinessRequest": {
+      "name": "Nightlife Boston",
+      "slug": "nightlife-boston",
+      "type": "nightlife",
+      "description": "Premium nightlife experiences.",
+      "logoUrl": "https://cdn.example.com/logo.png",
+      "coverPhotoUrl": "https://cdn.example.com/cover.jpg",
+      "contactEmail": "hello@nightlife.com",
+      "contactPhone": "+16175550123",
+      "website": "https://nightlife.com",
+      "address": "55 Traveler St",
+      "city": "Boston",
+      "state": "MA",
+      "country": "US"
+    },
+    "UpdateBusinessRequest": {
+      "name": "Nightlife Boston",
+      "description": "Updated bio",
+      "type": "nightlife",
+      "logoUrl": "https://cdn.example.com/logo.png",
+      "coverPhotoUrl": "https://cdn.example.com/cover.jpg",
+      "contactEmail": "hello@nightlife.com",
+      "contactPhone": "+16175550123",
+      "website": "https://nightlife.com",
+      "address": "55 Traveler St",
+      "city": "Boston",
+      "state": "MA",
+      "country": "US"
+    },
+    "AddBusinessMemberRequest": {
+      "uid": "firebase_uid",
+      "role": "manager"
+    },
+    "CreateEventRequest": {
+      "title": "Rooftop Sessions",
+      "description": "Live DJs and cocktails.",
+      "startUtc": "2025-06-01T23:00:00Z",
+      "endUtc": "2025-06-02T03:00:00Z",
+      "timezone": "America/New_York",
+      "venue": {
+        "name": "Skyline Loft",
+        "address": "123 Main St, Boston MA",
+        "lat": 42.35,
+        "lng": -71.06
+      },
+      "category": "music",
+      "tags": [
+        "party",
+        "dj"
+      ],
+      "admissionType": "see_ticketed",
+      "externalTicketUrl": null
+    },
+    "UpdateEventRequest": {
+      "title": "Rooftop Sessions",
+      "description": "Updated copy",
+      "startUtc": "2025-06-01T23:00:00Z",
+      "endUtc": "2025-06-02T03:00:00Z",
+      "timezone": "America/New_York",
+      "venue": {
+        "name": "Skyline Loft",
+        "address": "123 Main St, Boston MA",
+        "lat": 42.35,
+        "lng": -71.06
+      },
+      "category": "music",
+      "tags": [
+        "party",
+        "dj"
+      ],
+      "admissionType": "see_ticketed",
+      "externalTicketUrl": null,
+      "verified": true
+    },
+    "EventPromotionRequest": {
+      "goalType": "duration",
+      "budgetUsd": 250,
+      "startUtc": "2025-05-15T00:00:00Z",
+      "endUtc": "2025-05-30T00:00:00Z",
+      "targetReach": null
+    },
+    "EventDiscountRequest": {
+      "name": "Early Bird",
+      "description": "20% off first 50 tickets",
+      "promoCode": "EARLY20",
+      "url": null,
+      "percentOff": 20,
+      "amountOff": null,
+      "currency": "USD",
+      "expiresAtUtc": "2025-05-01T04:00:00Z",
+      "active": true
+    },
+    "CreateTicketTypeRequest": {
+      "name": "General Admission",
+      "description": "Standing room",
+      "price": 45.00,
+      "currency": "USD",
+      "quantityTotal": 200,
+      "salesStartUtc": "2025-04-15T12:00:00Z",
+      "salesEndUtc": "2025-05-30T23:59:59Z"
+    },
+    "PurchaseTicketsRequest": {
+      "quantity": 2,
+      "checkoutId": "co_f4f9a2e4c5b04f4ab6e7d5f6a1234567",
+      "recipientEmail": "buyer@example.com",
+      "recipientPhone": "+16175550199"
+    },
+    "StripeCheckoutResponse": {
+      "checkoutId": "co_f4f9a2e4c5b04f4ab6e7d5f6a1234567",
+      "paymentIntentId": "pi_3PCqOX2eZvKYlo2C16cQw9su",
+      "clientSecret": "pi_3PCqOX2eZvKYlo2C_secret_v3...",
+      "amount": 9000,
+      "currency": "usd",
+      "status": "requires_confirmation"
+    },
+    "RefundTicketRequest": {
+      "reason": "can't attend",
+      "force": false
+    },
+    "VerifyTicketRequest": {
+      "token": "eyJleHAiOiIyMDI1LTA2LTAxVDIzOjAwOjAwWiIsInVpZCI6InVzcl8xMjMiLCJwaWQiOiJwdXJfMTIzIiwiZWlkIjoiZXZ0XzEyMyJ9.XYZ",
+      "checkIn": true
+    },
+    "SubmitEventRatingRequest": {
+      "rating": 5,
+      "review": "Amazing experience!"
+    },
+    "SubmitEventReviewRequest": {
+      "title": "Loved it",
+      "body": "Great venue, music was on point."
+    },
+    "UpdateUserProfileRequest": {
+      "displayName": "Jane Doe",
+      "phoneNumber": "+16175551234",
+      "email": "jane@example.com",
+      "allowContact": true
+    },
+    "UserProfileResponse": {
+      "uid": "firebase_uid",
+      "email": "user@example.com",
+      "displayName": "Jane Doe",
+      "socxalId": "socxal_123",
+      "phoneNumber": "+16175551234",
+      "allowContact": true,
+      "photoUrl": "https://cdn.example.com/photo.jpg",
+      "bannerUrl": "https://cdn.example.com/banner.jpg",
+      "isBusiness": true,
+      "primaryBusinessId": "business_123"
+    },
+    "CategoryPreferencesRequest": {
+      "favoriteCategories": [
+        "music",
+        "nightlife"
+      ]
+    },
+    "LocationPreferencesRequest": {
+      "savedLocations": [
+        {
+          "label": "Home",
+          "lat": 42.36,
+          "lon": -71.06,
+          "radiusKm": 25,
+          "city": "Boston",
+          "state": "MA"
+        }
+      ]
+    },
+    "SaveOnboardingProgressRequest": {
+      "steps": {
+        "location": true,
+        "goals": true,
+        "business": false
+      },
+      "nextStep": "business",
+      "completed": false
+    },
+    "OnboardingLocationRequest": {
+      "city": "Boston",
+      "state": "MA",
+      "lat": 42.36,
+      "lon": -71.06
+    },
+    "OnboardingGoalsRequest": {
+      "goals": [
+        "find_events",
+        "host_events"
+      ]
+    },
+    "ConvertUserToBusinessRequest": {
+      "businessName": "Nightlife Boston",
+      "website": "https://nightlife.com",
+      "category": "nightlife",
+      "city": "Boston",
+      "state": "MA",
+      "bio": "We host premium nightlife experiences."
+    },
+    "UploadEventMediaRequest": {
+      "file": "binary multipart field",
+      "purposes": [
+        "gallery",
+        "background"
+      ]
+    },
+    "UpdateEventMediaRequest": {
+      "purposes": [
+        "background"
+      ]
+    },
+    "SaveEventPageRequest": {
+      "theme": "default",
+      "palette": null,
+      "expectedRevision": 2,
+      "blocks": [
+        {
+          "id": null,
+          "type": "hero",
+          "order": 1,
+          "settings": {
+            "headline": "Welcome to Rooftop Sessions",
+            "body": "Join us for skyline views."
+          },
+          "children": []
+        }
+      ]
+    },
+    "PublishEventPageRequest": {
+      "expectedRevision": 2
+    },
+    "RestoreEventPageRequest": {
+      "publish": true
+    },
+    "EventPagePreviewTokenRequest": {
+      "expiresInSeconds": 900
+    },
+    "EventInteractionRequest": {
+      "type": "view",
+      "source": "web",
+      "metadata": "{\"section\":\"hero\"}"
+    },
+    "EventPlaylistUpsertRequest": {
+      "title": "Featured",
+      "description": "Curated highlights",
+      "query": "featured=true",
+      "category": null,
+      "creatorType": null,
+      "sort": "promoted_desc,date_asc",
+      "maxEvents": 20,
+      "daysFromOffset": -1,
+      "daysToOffset": 14,
+      "radiusKm": null,
+      "includePrivate": false,
+      "requiresLocation": false,
+      "defaultLat": null,
+      "defaultLon": null,
+      "city": null,
+      "state": null,
+      "enabled": true,
+      "displayOrder": 1
+    },
+    "CategorySeedItem": {
+      "path": "/taxonomy/categories/items/music",
+      "name": "music",
+      "keywords": [
+        "concert",
+        "festival"
+      ],
+      "tags": [
+        "music",
+        "live"
+      ],
+      "updatedAt": "2025-09-13T22:57:47Z"
+    },
+    "ReportEventRequest": {
+      "eventId": "evt_123",
+      "category": "spam",
+      "notes": "Duplicate listing"
+    },
+    "UpdateReportStatusRequest": {
+      "status": "in_review",
+      "notes": "Investigating with organizer",
+      "assignee": "moderator_uid"
+    },
+    "RsvpRequest": {
+      "status": "going"
+    },
+    "NotificationTemplateDoc": {
+      "id": "ticket_purchase",
+      "subject": "Your tickets for {{eventTitle}}",
+      "htmlBody": "<p>Thanks for your purchase. Quantity: {{quantity}}.</p>",
+      "textBody": "Thanks for your purchase for {{eventTitle}} ({{quantity}})."
+    },
+    "UserBusinessMembershipResponse": {
+      "items": [
+        {
+          "businessId": "business_123",
+          "businessName": "Nightlife Boston",
+          "businessSlug": "nightlife-boston",
+          "logoUrl": "https://cdn.example.com/logo.png",
+          "city": "Boston",
+          "state": "MA",
+          "role": "manager",
+          "status": "active"
+        }
+      ]
+    },
+    "ArchiveRunRequest": {
+      "olderThanDays": 7,
+      "limit": 100
+    },
+    "ArchiveCleanupRequest": {
+      "limit": 500
+    },
+    "IngestionPlan": {
+      "id": "plan_boston",
+      "name": "Boston Weekly",
+      "city": "Boston",
+      "cseQueries": [
+        "events this weekend Boston"
+      ],
+      "icsFeeds": [
+        "https://calendar.city.gov/events.ics"
+      ],
+      "enabled": true
+    },
+    "EventSourceConfig": {
+      "id": "ticketmaster",
+      "name": "Ticketmaster",
+      "type": "html_scraper",
+      "enabled": true,
+      "hostPattern": "ticketmaster.com",
+      "maxUrls": 200,
+      "maxCreates": 100,
+      "priority": 10,
+      "settings": {
+        "baseUrl": "https://www.ticketmaster.com/browse/concerts",
+        "listXPath": "//div[@class='event']",
+        "titleXPath": ".//h3/text()",
+        "startXPath": ".//time/@datetime",
+        "linkXPath": ".//a/@href"
+      }
+    },
+    "GrouponDealConfig": {
+      "enabled": true,
+      "intervalSeconds": 3600,
+      "maxDealsPerMarket": 50,
+      "matchRadiusKm": 50,
+      "matchCandidates": 100,
+      "matchThreshold": 0.65,
+      "eventKeywords": [
+        "festival",
+        "concert"
+      ],
+      "markets": [
+        {
+          "id": "boston",
+          "name": "Boston",
+          "divisionId": "boston",
+          "city": "Boston",
+          "lat": 42.36,
+          "lon": -71.06,
+          "radiusKm": 50,
+          "query": "events",
+          "limit": 100,
+          "enabled": true
+        }
+      ]
+    },
+    "HtmlScraperConfig": {
+      "id": "custom-blog",
+      "name": "City Nightlife Blog",
+      "enabled": true,
+      "baseUrl": "https://citynightlife.com/events",
+      "hostPattern": "citynightlife.com",
+      "listXPath": "//article",
+      "titleXPath": ".//h2/text()",
+      "titleAttribute": null,
+      "descriptionXPath": ".//p[@class='summary']/text()",
+      "descriptionAttribute": null,
+      "startXPath": ".//time/@datetime",
+      "startAttribute": null,
+      "endXPath": null,
+      "endAttribute": null,
+      "linkXPath": ".//a/@href",
+      "linkAttribute": null,
+      "imageXPath": ".//img/@src",
+      "imageAttribute": null,
+      "venueNameXPath": null,
+      "venueNameAttribute": null,
+      "venueAddressXPath": null,
+      "venueAddressAttribute": null,
+      "timezone": "America/New_York",
+      "category": "nightlife",
+      "tags": [
+        "nightlife"
+      ],
+      "defaultCity": "Boston",
+      "defaultState": "MA",
+      "alwaysUseBaseUrl": false
+    },
+    "ReportTimelineEvent": {
+      "status": "triaged",
+      "notes": "Contacted organizer",
+      "actor": "moderator_uid",
+      "timestampUtc": "2025-05-01T12:34:00Z"
+    }
+  }
+}

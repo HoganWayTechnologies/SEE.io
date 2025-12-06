@@ -1,31 +1,26 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AuthForm from '../components/AuthForm'
 import { useAuth } from '../context/AuthContext'
-import UserMenu from '../components/UserMenu'
-import NotificationBell from '../components/NotificationBell'
+import SiteNav from '../components/SiteNav'
 
 type AuthMode = 'signin' | 'signup'
 
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('signin')
   const auth = useAuth()
+  const navigate = useNavigate()
 
   return (
     <div>
       {/* Navigation */}
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/saved" className="nav-link">Saved</Link>
-            <Link to="/tickets" className="nav-link">My Tickets</Link>
-            <NotificationBell />
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        links={[
+          { to: '/discover', label: 'Discover' },
+          { to: '/saved', label: 'Saved' },
+          { to: '/tickets', label: 'My Tickets' }
+        ]}
+      />
 
       {/* Auth Section */}
       <div className="container" style={{ padding: '4rem 0', maxWidth: '500px' }}>
@@ -43,7 +38,7 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <AuthForm mode={mode} />
+            <AuthForm mode={mode} onSuccess={() => navigate('/onboarding')} />
 
             <div style={{ textAlign: 'center', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--gray-200)' }}>
               <p style={{ color: 'var(--gray-600)', marginBottom: '1rem' }}>

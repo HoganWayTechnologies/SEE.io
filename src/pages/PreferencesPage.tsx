@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import UserMenu from '../components/UserMenu'
-import NotificationBell from '../components/NotificationBell'
 import { api, UserPreferences } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import SiteNav from '../components/SiteNav'
 
 type CategoryOption = { name: string; followed: boolean }
 type LocationOption = { label: string; city: string; radiusKm: number }
@@ -114,21 +113,17 @@ export default function PreferencesPage() {
 
   return (
     <div>
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/profile" className="nav-link">Profile</Link>
-            <Link to="/settings" className="nav-link">Settings</Link>
-            <Link to="/preferences" className="nav-link active">Preferences</Link>
-            <Link to="/saved" className="nav-link">Saved</Link>
-            <Link to="/tickets" className="nav-link">My Tickets</Link>
-            <NotificationBell />
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        activePath="/preferences"
+        links={[
+          { to: '/discover', label: 'Discover' },
+          { to: '/profile', label: 'Profile' },
+          { to: '/settings', label: 'Settings' },
+          { to: '/preferences', label: 'Preferences' },
+          { to: '/saved', label: 'Saved' },
+          { to: '/tickets', label: 'My Tickets' }
+        ]}
+      />
 
       <div className="container" style={{ padding: '3rem 0' }}>
         <header style={{ marginBottom: '2rem', maxWidth: '720px' }}>

@@ -1,16 +1,9 @@
 import React from 'react'
 import EventCard from './EventCard'
-
-interface Event {
-  id: string
-  title: string
-  date?: string
-  location?: string
-  promoted?: boolean
-}
+import type { Event as EventType } from '../services/api'
 
 interface EventGridProps {
-  events: Event[]
+  events: EventType[]
   loading?: boolean
   error?: string
   emptyMessage?: string
@@ -24,7 +17,7 @@ export default function EventGrid({
   emptyMessage = "No events found.",
   className = ''
 }: EventGridProps) {
-  const interleavePromoted = (list: Event[]) => {
+  const interleavePromoted = (list: EventType[]) => {
     const promoted = list.filter(e => e.promoted)
     const regular = list.filter(e => !e.promoted)
     if (!promoted.length) return list
@@ -101,8 +94,14 @@ export default function EventGrid({
           id={event.id}
           title={event.title}
           date={event.date}
+          time={event.time}
           location={event.location}
           promoted={event.promoted}
+          category={event.category}
+          admissionType={event.admissionType}
+          businessId={event.businessId || null}
+          businessSlug={event.businessSlug || null}
+          hostName={event.businessName || event.hostDisplayName || event.organizer || null}
         />
       ))}
     </div>

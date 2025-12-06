@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import { socxalLogin, socxalRegister, exchangeToFirebase } from '../../lib/socxal'
 import { api } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -15,12 +14,20 @@ export default function AuthForm({ mode, onSuccess, className = '' }: AuthFormPr
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
+  const [accountType, setAccountType] = useState<'user' | 'business'>('user')
+  const [businessName, setBusinessName] = useState('')
+  const [businessWebsite, setBusinessWebsite] = useState('')
+  const [acceptBusinessTerms, setAcceptBusinessTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const auth = useAuth()
 
   useEffect(() => {
     setError(null)
+    setAccountType('user')
+    setBusinessName('')
+    setBusinessWebsite('')
+    setAcceptBusinessTerms(false)
   }, [mode])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,16 +36,32 @@ export default function AuthForm({ mode, onSuccess, className = '' }: AuthFormPr
     setError(null)
 
     try {
-      const resp = mode === 'signin'
-        ? await socxalLogin(email, password)
-        : await socxalRegister(email, password, displayName || undefined)
+      if (mode === 'signup') {
+        if (accountType === 'business') {
+          if (!businessName.trim()) throw new Error('Business name is required for business accounts.')
+          if (!acceptBusinessTerms) throw new Error('Please agree to the business publishing terms.')
+          await api.signupBusiness({
+            email,
+            password,
+            displayName: displayName || null,
+            business: {
+              name: businessName,
+              website: businessWebsite || null
+            }
+          })
+        } else {
+          await api.signupUser({
+            email,
+            password,
+            displayName: displayName || null
+          })
+        }
+      }
 
-      const accessToken = resp?.accessToken
-      if (!accessToken) throw new Error('Socxal did not return an access token')
-
-      const exchange = await exchangeToFirebase(accessToken)
-      const firebaseIdToken = exchange?.firebaseToken || exchange?.idToken
-      if (!firebaseIdToken) throw new Error('Exchange to Firebase failed')
+      const signinResponse = await api.signin({ email, password })
+      const firebaseIdToken = signinResponse?.idToken
+      const refreshToken = signinResponse?.refreshToken
+      if (!firebaseIdToken || !refreshToken) throw new Error('Authentication failed to return session tokens.')
 
       const seeProfileResponse = await api.fetchProfile(firebaseIdToken)
       const aggregatedProfile = {
@@ -46,10 +69,7 @@ export default function AuthForm({ mode, onSuccess, className = '' }: AuthFormPr
         uid: seeProfileResponse?.uid
           || seeProfileResponse?.id
           || seeProfileResponse?.userId
-          || exchange?.uid
-          || resp.raw?.localId
-          || resp.raw?.uid
-          || resp.user?.id
+          || signinResponse?.uid
       }
 
       try {
@@ -62,7 +82,9 @@ export default function AuthForm({ mode, onSuccess, className = '' }: AuthFormPr
         console.warn('Session cookie setup failed (optional):', sessionErr)
       }
 
-      auth.signIn(aggregatedProfile, firebaseIdToken, accessToken)
+      auth.signIn(aggregatedProfile, firebaseIdToken, {
+        refreshToken
+      })
       onSuccess?.(aggregatedProfile)
     } catch (err: any) {
       setError(err?.message || 'Authentication failed')
@@ -147,6 +169,74 @@ export default function AuthForm({ mode, onSuccess, className = '' }: AuthFormPr
             disabled={loading}
           />
         </div>
+
+        {mode === 'signup' && (
+          <>
+            <div className="form-group">
+              <label className="form-label">Account type</label>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <input
+                    type="radio"
+                    name="account-type"
+                    value="user"
+                    checked={accountType === 'user'}
+                    onChange={() => setAccountType('user')}
+                    disabled={loading}
+                  />
+                  <span>Discover events</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <input
+                    type="radio"
+                    name="account-type"
+                    value="business"
+                    checked={accountType === 'business'}
+                    onChange={() => setAccountType('business')}
+                    disabled={loading}
+                  />
+                  <span>Publish events</span>
+                </label>
+              </div>
+            </div>
+            {accountType === 'business' && (
+              <div className="card" style={{ marginBottom: '1rem' }}>
+                <div className="card-body">
+                  <h4 className="card-title">Business details</h4>
+                  <div className="form-group">
+                    <label className="form-label">Business or organization name</label>
+                    <input
+                      className="form-input"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      placeholder="e.g., City Nightlife LLC"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Website or social link</label>
+                    <input
+                      className="form-input"
+                      value={businessWebsite}
+                      onChange={(e) => setBusinessWebsite(e.target.value)}
+                      placeholder="https://"
+                      disabled={loading}
+                    />
+                  </div>
+                  <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem', color: 'var(--gray-700)' }}>
+                    <input
+                      type="checkbox"
+                      checked={acceptBusinessTerms}
+                      onChange={(e) => setAcceptBusinessTerms(e.target.checked)}
+                      disabled={loading}
+                    />
+                    <span>I own the rights to my content and agree to the business agreement.</span>
+                  </label>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {mode === 'signup' && (
           <div className="form-group">

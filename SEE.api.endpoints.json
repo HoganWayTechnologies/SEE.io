@@ -10,6 +10,45 @@
       "description": "azure-deployment"
     },
     {
+      "path": "/v1/venues",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List venues for selectors.",
+      "queryParams": [
+        { "name": "q", "type": "string", "required": false },
+        { "name": "take", "type": "integer", "required": false, "default": 50 }
+      ],
+      "responses": {
+        "200": { "schema": "VenueDirectoryResponse" }
+      }
+    },
+    {
+      "path": "/v1/hosts",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List hosts for selectors.",
+      "queryParams": [
+        { "name": "q", "type": "string", "required": false },
+        { "name": "take", "type": "integer", "required": false, "default": 50 }
+      ],
+      "responses": {
+        "200": { "schema": "HostDirectoryResponse" }
+      }
+    },
+    {
+      "path": "/v1/businesses/directory",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Search businesses for dropdowns and selectors.",
+      "queryParams": [
+        { "name": "q", "type": "string", "required": false },
+        { "name": "take", "type": "integer", "required": false, "default": 50 }
+      ],
+      "responses": {
+        "200": { "schema": "BusinessDirectoryResponse" }
+      }
+    },
+    {
       "url": "https://localhost:7108",
       "description": "local-https"
     },
@@ -80,6 +119,25 @@
           "type": "string",
           "required": false,
           "note": "address hint - will geocode if lat/lon missing"
+        },
+        {
+          "name": "creatorType",
+          "type": "string",
+          "required": false,
+          "note": "user | business"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "default": "rank",
+          "note": "rank | date | popularity | promoted"
+        },
+        {
+          "name": "includePrivate",
+          "type": "boolean",
+          "required": false,
+          "default": false
         },
         {
           "name": "venue",
@@ -166,6 +224,54 @@
       }
     },
     {
+      "path": "/v1/public/events/playlists",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "List available curated playlists (Featured, Weekend, etc.).",
+      "responses": {
+        "200": {
+          "schema": "EventPlaylistListResponse"
+        }
+      }
+    },
+    {
+      "path": "/v1/public/events/playlists/{id}",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Fetch a single playlist and its events. Supports optional lat/lon to personalize location-aware playlists.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "lat",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "lng",
+          "type": "number",
+          "required": false,
+          "note": "alias for lon"
+        },
+        {
+          "name": "lon",
+          "type": "number",
+          "required": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPlaylistResponse"
+        },
+        "404": {}
+      }
+    },
+    {
       "path": "/v1/events",
       "method": "GET",
       "auth": "anonymous",
@@ -196,6 +302,25 @@
           "name": "state",
           "type": "string",
           "required": false
+        },
+        {
+          "name": "creatorType",
+          "type": "string",
+          "required": false,
+          "note": "user | business"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "default": "rank",
+          "note": "rank | date | popularity | promoted"
+        },
+        {
+          "name": "includePrivate",
+          "type": "boolean",
+          "required": false,
+          "default": false
         },
         {
           "name": "venue",
@@ -297,14 +422,58 @@
       }
     },
     {
+      "path": "/v1/events/{eventId}/interactions",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Record a client-side interaction (view, click, save, share, ticket-click, map-open) for analytics and ranking.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "requestBody": "EventInteractionRequest",
+      "responses": {
+        "202": {
+          "description": "Accepted"
+        },
+        "400": {
+          "description": "Invalid payload or interaction type"
+        }
+      }
+    },
+    {
       "path": "/v1/categories",
       "method": "GET",
       "auth": "anonymous",
+      "description": "List taxonomy categories stored in Firestore.",
       "responses": {
         "200": {
           "description": "Array of categories",
           "schema": "CategoryItem[]"
         }
+      }
+    },
+    {
+      "path": "/v1/categories/seed",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Bulk upsert taxonomy/category/item documents.",
+      "body": {
+        "schema": "CategorySeedItem[]",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": {
+            "count": "integer",
+            "items": "object[]"
+          }
+        },
+        "400": {},
+        "401": {},
+        "403": {}
       }
     },
     {
@@ -698,6 +867,226 @@
       }
     },
     {
+      "path": "/v1/publisher/businesses/{businessId}/page",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return draft and published page builder payloads for a business profile.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "PublisherEventPageResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/catalog",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return builder config and uploaded business media assets for the profile editor.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "PageBuilderCatalogResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Replace the draft business profile layout.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "SaveEventPageRequest",
+        "required": true
+      },
+      "responses": {
+        "200": { "schema": "EventPageVersionResponse" },
+        "400": {},
+        "404": {},
+        "409": { "description": "revision conflict" }
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/publish",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Publish the current draft business profile layout.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "PublishEventPageRequest",
+        "required": true
+      },
+      "responses": {
+        "200": { "schema": "EventPageVersionResponse" },
+        "400": {},
+        "404": {},
+        "409": { "description": "revision conflict" }
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/preview",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Generate a preview token for the current business page draft.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "EventPagePreviewTokenRequest",
+        "required": false
+      },
+      "responses": {
+        "200": { "schema": "EventPagePreviewTokenResponse" },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/history",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List previous published versions of the business profile for auditing/rollback.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "EventPageHistoryResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/history/{versionId}/restore",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Restore a historical business page version (optionally publishing immediately).",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true },
+        { "name": "versionId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "RestoreEventPageRequest",
+        "required": false
+      },
+      "responses": {
+        "200": { "schema": "EventPageVersionResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/draft",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Discard the business page draft and revert to the last published version.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "PublisherEventPageResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/preview/{token}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Revoke a preview token for the business page builder.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true },
+        { "name": "token", "type": "string", "required": true }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/page/usage",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Return block and media usage counts for a business page draft/published pair.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "EventPageUsageResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/media",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "List uploaded media assets for a business (logos, gallery, etc).",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "queryParams": [
+        { "name": "purpose", "type": "string", "required": false }
+      ],
+      "responses": {
+        "200": { "schema": "EventMediaItemResponse[]" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/media",
+      "method": "POST",
+      "auth": "Bearer (Publisher)",
+      "description": "Upload a media asset for the business profile (multipart/form-data).",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "UploadEventMediaRequest",
+        "required": true
+      },
+      "responses": {
+        "201": { "schema": "EventMediaItemResponse" },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/media/{mediaId}",
+      "method": "PUT",
+      "auth": "Bearer (Publisher)",
+      "description": "Update metadata (purposes) for a business media asset.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true },
+        { "name": "mediaId", "type": "string", "required": true }
+      ],
+      "body": {
+        "schema": "UpdateEventMediaRequest",
+        "required": true
+      },
+      "responses": {
+        "200": { "schema": "EventMediaItemResponse" },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/publisher/businesses/{businessId}/media/{mediaId}",
+      "method": "DELETE",
+      "auth": "Bearer (Publisher)",
+      "description": "Delete a business media asset (and blob).",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true },
+        { "name": "mediaId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "204": {},
+        "404": {}
+      }
+    },
+    {
       "path": "/v1/publisher/events/{id}/promotion",
       "method": "POST",
       "auth": "Bearer (Publisher)",
@@ -857,6 +1246,170 @@
       }
     },
     {
+      "path": "/v1/auth/link-request",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token optional)",
+      "description": "Create a short-lived verification code to link an external provider account to SEE. Authenticated callers infer local UID; otherwise localUserId must be sent in the payload.",
+      "body": {
+        "schema": "LinkRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "LinkRequestResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/auth/link-confirm",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Complete a link request by validating the verification code and persisting the provider mapping.",
+      "body": {
+        "schema": "LinkConfirmRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "LinkConfirmResponse"
+        },
+        "400": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/auth/signup",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Create a SEE account (backed by Firebase Auth) and return a Firebase custom token for the new user.",
+      "body": {
+        "schema": "SignupRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "SignupResponse"
+        },
+        "400": {},
+        "503": {}
+      }
+    },
+    {
+      "path": "/v1/auth/signup/business",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Create a SEE account and immediately provision a business profile owned by the new user.",
+      "body": {
+        "schema": "BusinessSignupRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "BusinessSignupResponse"
+        },
+        "400": {},
+        "503": {}
+      }
+    },
+    {
+      "path": "/v1/auth/signin",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Password-based sign in that proxies Firebase IdentityToolkit and returns an ID token plus refresh token.",
+      "body": {
+        "schema": "SigninRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "SigninResponse"
+        },
+        "401": {},
+        "429": {},
+        "503": {}
+      }
+    },
+    {
+      "path": "/v1/auth/exchange-to-firebase",
+      "method": "POST",
+      "auth": "Bearer (trusted internal caller)",
+      "description": "Mint a Firebase custom token for a trusted external identity so the frontend can authenticate with Firebase using SEE-managed credentials.",
+      "body": {
+        "schema": "ExchangeRequest",
+        "required": false
+      },
+      "responses": {
+        "200": {
+          "schema": "ExchangeResponse"
+        },
+        "401": {},
+        "429": {},
+        "500": {}
+      }
+    },
+    {
+      "path": "/v1/auth/logout",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Logout the current session (marks session ended).",
+      "body": { "schema": "LogoutRequest", "required": false },
+      "responses": {
+        "202": { "schema": { "loggedOut": "boolean" } },
+        "401": {}
+      }
+    },
+    {
+      "path": "/v1/auth/logout-all",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Logout all active sessions for the signed-in user.",
+      "responses": {
+        "202": { "schema": { "endedSessions": "integer" } },
+        "401": {}
+      }
+    },
+    {
+      "path": "/v1/auth/magic-link",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Create a magic link token for passwordless sign in.",
+      "body": { "schema": "MagicLinkRequest", "required": true },
+      "responses": {
+        "200": { "schema": "MagicLinkResponse" },
+        "400": {}
+      }
+    },
+    {
+      "path": "/v1/auth/magic-link/consume",
+      "method": "POST",
+      "auth": "anonymous",
+      "description": "Consume a magic link token and return a Firebase custom token.",
+      "body": { "schema": "MagicLinkConsumeRequest", "required": true },
+      "responses": {
+        "200": {
+          "schema": {
+            "customToken": "string"
+          }
+        },
+        "400": {}
+      }
+    },
+    {
+      "path": "/v1/auth/magic-link/{token}",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Lookup the status of a magic link token (for polling).",
+      "pathParams": [
+        { "name": "token", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "MagicLinkStatusResponse" },
+        "404": {}
+      }
+    },
+    {
       "path": "/v1/admin/claims/{userId}",
       "method": "GET",
       "auth": "Bearer (Admin role=admin)",
@@ -889,7 +1442,7 @@
         }
       ],
       "body": {
-        "schema": "ClaimsMap",
+        "schema": "ClaimsArray",
         "required": true
       },
       "responses": {
@@ -911,7 +1464,7 @@
         }
       ],
       "body": {
-        "schema": "ClaimsMap",
+        "schema": "ClaimsArray",
         "required": true
       },
       "responses": {
@@ -939,6 +1492,19 @@
       ],
       "responses": {
         "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/config/seed",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Insert default ranking, playlist, and rate limit configuration documents into Firestore if they are missing.",
+      "responses": {
+        "200": {
+          "schema": "SeedConfigResponse"
+        },
         "401": {},
         "403": {}
       }
@@ -1032,6 +1598,221 @@
       ],
       "responses": {
         "204": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-playlists",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List all event playlists (including disabled) for management.",
+      "responses": {
+        "200": {
+          "schema": "EventPlaylistAdminResponse[]"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-playlists/{id}",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Fetch a single playlist definition.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventPlaylistAdminResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-playlists",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Create a new playlist definition.",
+      "body": {
+        "schema": "EventPlaylistUpsertRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "EventPlaylistAdminResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-playlists/seed",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Bulk upsert playlist definitions. Useful for seeding.",
+      "body": {
+        "schema": "EventPlaylistUpsertRequest[]",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": {
+            "count": "integer",
+            "items": "EventPlaylistAdminResponse[]"
+          }
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-playlists/{id}",
+      "method": "PUT",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Update an existing playlist.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "EventPlaylistUpsertRequest",
+        "required": true
+      },
+      "responses": {
+        "200": {
+          "schema": "EventPlaylistAdminResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/event-playlists/{id}",
+      "method": "DELETE",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Delete or disable a playlist.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/events/archivable",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List events eligible for archiving based on their start date.",
+      "query": {
+        "olderThanDays": "integer (default 7)",
+        "limit": "integer (default 100)"
+      },
+      "responses": {
+        "200": { "schema": "ArchivableEventsResponse" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/events/archive-run",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Move archivable events into the archive collection.",
+      "body": { "schema": "ArchiveRunRequest", "required": false },
+      "responses": {
+        "200": { "schema": "ArchiveRunResponse" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/events/archive-media-cleanup",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Remove archived event media from blob storage.",
+      "body": { "schema": "ArchiveCleanupRequest", "required": false },
+      "responses": {
+        "200": { "schema": "ArchiveCleanupResponse" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/archived-events/{id}",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Fetch a single archived event.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "ArchivedEventResponse" },
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/archived-events/{id}/restore",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Restore an archived event back to the active collection.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/archived-events/{id}",
+      "method": "DELETE",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Permanently delete an archived event.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/data/business-user-link-refresh",
+      "method": "POST",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "One-off maintenance endpoint that backfills PrimaryBusinessId/IsBusiness flags and owner memberships for existing business records.",
+      "responses": {
+        "200": {
+          "schema": {
+            "processed": "integer",
+            "membershipsCreated": "integer",
+            "userLinksUpdated": "integer"
+          }
+        },
         "401": {},
         "403": {}
       }
@@ -1575,6 +2356,31 @@
       }
     },
     {
+      "path": "/v1/users/{id}/upgrade-to-business",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Create a business owned by the specified user and return the provisioned business details.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "body": {
+        "schema": "CreateBusinessRequest",
+        "required": true
+      },
+      "responses": {
+        "201": {
+          "schema": "BusinessDetail"
+        },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
       "path": "/v1/users/{id}/preferences",
       "method": "PUT",
       "auth": "Bearer (Firebase ID token)",
@@ -1619,6 +2425,26 @@
       }
     },
     {
+      "path": "/v1/users/{id}/business-memberships",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "List the businesses the user belongs to (owner/manager/contributor) for badge/switcher UI.",
+      "pathParams": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "UserBusinessMembershipResponse"
+        },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
       "path": "/v1/users/{id}/preferences/categories",
       "method": "PUT",
       "auth": "Bearer (Firebase ID token)",
@@ -1640,6 +2466,103 @@
         },
         "401": {},
         "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/onboarding",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Return onboarding progress for the authenticated user.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "OnboardingStatusResponse" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/onboarding",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Update onboarding progress (steps completed, next step, completion flag).",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": { "schema": "SaveOnboardingProgressRequest", "required": true },
+      "responses": {
+        "200": { "schema": "OnboardingStatusResponse" },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/location",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Save onboarding location info (city, state, lat, lon).",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": { "schema": "OnboardingLocationRequest", "required": true },
+      "responses": {
+        "200": { "schema": "OnboardingStatusResponse" },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/goals",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Save onboarding goals (what brings you here).",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": { "schema": "OnboardingGoalsRequest", "required": true },
+      "responses": {
+        "200": { "schema": "OnboardingStatusResponse" },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/convert-to-business",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Convert the user into a business profile during onboarding.",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": { "schema": "ConvertUserToBusinessRequest", "required": true },
+      "responses": {
+        "200": { "schema": "BusinessDetail" },
+        "400": {},
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/users/{id}/business-logo",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Upload a business logo image during onboarding (multipart/form-data).",
+      "pathParams": [
+        { "name": "id", "type": "string", "required": true }
+      ],
+      "body": {
+        "description": "multipart/form-data with file plus businessId field"
+      },
+      "responses": {
+        "200": { "schema": "BusinessDetail" },
+        "400": {},
+        "401": {},
+        "403": {},
+        "404": {}
       }
     },
     {
@@ -2082,6 +3005,27 @@
       }
     },
     {
+      "path": "/v1/businesses/{businessId}/page",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Return the published business profile page or preview a draft when previewToken is provided.",
+      "pathParams": [
+        { "name": "businessId", "type": "string", "required": true }
+      ],
+      "queryParams": [
+        {
+          "name": "previewToken",
+          "type": "string",
+          "required": false,
+          "description": "Token issued by the business page preview endpoint"
+        }
+      ],
+      "responses": {
+        "200": { "schema": "EventPagePublicResponse" },
+        "404": {}
+      }
+    },
+    {
       "path": "/v1/events/{eventId}/tickets/{ticketId}/purchase",
       "method": "POST",
       "auth": "Bearer (Firebase ID token)",
@@ -2357,6 +3301,34 @@
       }
     },
     {
+      "path": "/v1/publisher/events/{eventId}/interactions",
+      "method": "GET",
+      "auth": "Bearer (Publisher)",
+      "description": "Aggregate interaction analytics (views, clicks, saves, shares, ticket clicks, map opens) for a publisher-owned event.",
+      "pathParams": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "businessId",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "schema": "EventInteractionSummaryResponse"
+        },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
       "path": "/v1/events/{eventId}/reviews",
       "method": "GET",
       "auth": "anonymous",
@@ -2465,6 +3437,172 @@
         "401": {},
         "403": {}
       }
+    },
+    {
+      "path": "/v1/events/{eventId}/rsvp",
+      "method": "GET",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Get the signed-in user's RSVP status for an event (none|going|interested|bookmark).",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": { "status": "string" } },
+        "401": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/rsvp",
+      "method": "PUT",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Set the signed-in user's RSVP status (going|interested|bookmark|none).",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true }
+      ],
+      "body": { "schema": "RsvpRequest", "required": true },
+      "responses": {
+        "200": { "schema": { "status": "string" } },
+        "400": {},
+        "401": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/rsvp/summary",
+      "method": "GET",
+      "auth": "anonymous",
+      "description": "Return counts for going/interested/bookmarked for an event.",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "EventRsvpSummaryResponse" }
+      }
+    },
+    {
+      "path": "/v1/admin/events/{eventId}/rsvps",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List RSVPs for an event (for moderation/analytics).",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true }
+      ],
+      "queryParams": [
+        { "name": "take", "type": "integer", "required": false, "default": 200 }
+      ],
+      "responses": {
+        "200": { "schema": "EventRsvpDoc[]" }
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/refund",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Request a refund for a ticket purchase (subject to refund cutoff). Admins can force.",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true },
+        { "name": "ticketId", "type": "string", "required": true }
+      ],
+      "body": { "schema": "RefundTicketRequest", "required": true },
+      "responses": {
+        "200": { "schema": "TicketRefundResponse" },
+        "400": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/{ticketId}/resend",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Resend ticket delivery email/SMS to the purchaser.",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true },
+        { "name": "ticketId", "type": "string", "required": true }
+      ],
+      "responses": {
+        "202": {},
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/events/{eventId}/tickets/verify",
+      "method": "POST",
+      "auth": "Bearer (Firebase ID token)",
+      "description": "Validate a ticket barcode token and optionally mark check-in.",
+      "pathParams": [
+        { "name": "eventId", "type": "string", "required": true }
+      ],
+      "body": { "schema": "VerifyTicketRequest", "required": true },
+      "responses": {
+        "200": { "schema": "VerifyTicketResponse" },
+        "400": {},
+        "401": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/tickets/audit",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List ticket inventory audit entries.",
+      "queryParams": [
+        { "name": "eventId", "type": "string", "required": false },
+        { "name": "ticketId", "type": "string", "required": false },
+        { "name": "reason", "type": "string", "required": false },
+        { "name": "take", "type": "integer", "required": false, "default": 100 }
+      ],
+      "responses": {
+        "200": { "schema": "TicketInventoryAuditDoc[]" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/notifications/templates",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "List notification templates (email/SMS) stored in Firestore.",
+      "queryParams": [
+        { "name": "take", "type": "integer", "required": false, "default": 20 }
+      ],
+      "responses": {
+        "200": { "schema": "NotificationTemplateDoc[]" },
+        "401": {},
+        "403": {}
+      }
+    },
+    {
+      "path": "/v1/admin/notifications/templates/{key}",
+      "method": "GET",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Get a notification template by key.",
+      "pathParams": [
+        { "name": "key", "type": "string", "required": true }
+      ],
+      "responses": {
+        "200": { "schema": "NotificationTemplateDoc" },
+        "401": {},
+        "403": {},
+        "404": {}
+      }
+    },
+    {
+      "path": "/v1/admin/notifications/templates/{key}",
+      "method": "PUT",
+      "auth": "Bearer (Admin role=admin)",
+      "description": "Create or update a notification template.",
+      "pathParams": [
+        { "name": "key", "type": "string", "required": true }
+      ],
+      "body": { "schema": "NotificationTemplateDoc", "required": true },
+      "responses": {
+        "204": {},
+        "401": {},
+        "403": {}
+      }
     }
   ],
   "schemas": {
@@ -2482,7 +3620,9 @@
       "timezone": "string",
       "venue": "VenueRef",
       "category": "string",
-      "tags": "string[]"
+      "tags": "string[]",
+      "admissionType": "\"open\" | \"free\" | \"see_ticketed\" | \"external_ticketed\" (default \"open\")",
+      "externalTicketUrl": "string | null"
     },
     "UpdateEventRequest": "CreateEventRequest + { verified: boolean }",
     "EventResponse": {
@@ -2497,6 +3637,9 @@
       "tags": "string[]",
       "verified": "boolean",
       "status": "string",
+      "admissionType": "string",
+      "hasInternalTickets": "boolean",
+      "externalTicketUrl": "string | null",
       "shareUrl": "string | null",
       "promoted": "boolean",
       "promotion": "EventPromotionResponse | null",
@@ -2518,6 +3661,9 @@
       "category": "string",
       "tags": "string[]",
       "status": "string",
+      "admissionType": "string",
+      "hasInternalTickets": "boolean",
+      "externalTicketUrl": "string | null",
       "venueName": "string | null",
       "venueAddress": "string | null",
       "imageUrl": "string | null",
@@ -2680,6 +3826,13 @@
       "name": "string",
       "tags": "string[]"
     },
+    "CategorySeedItem": {
+      "path": "string | null",
+      "name": "string | null",
+      "keywords": "string[] | null",
+      "tags": "string[] | null",
+      "updatedAt": "string (date-time) | null"
+    },
     "CreateKeyRequest": {
       "role": "string",
       "ownerId": "string | null",
@@ -2710,12 +3863,155 @@
     "LinkSocxalRequest": {
       "socxalId": "string"
     },
+    "LinkRequest": {
+      "externalProvider": "string",
+      "externalUid": "string",
+      "localUserId": "string | null"
+    },
+    "LinkRequestResponse": {
+      "requestId": "string",
+      "code": "string",
+      "expiresIn": "integer"
+    },
+    "LinkConfirmRequest": {
+      "requestId": "string",
+      "code": "string"
+    },
+    "LinkConfirmResponse": {
+      "provider": "string",
+      "externalUid": "string",
+      "localUserId": "string"
+    },
+    "SignupRequest": {
+      "email": "string",
+      "password": "string",
+      "displayName": "string | null"
+    },
+    "SignupResponse": {
+      "uid": "string",
+      "customToken": "string"
+    },
+    "BusinessSignupRequest": {
+      "email": "string",
+      "password": "string",
+      "displayName": "string | null",
+      "business": "CreateBusinessRequest"
+    },
+    "BusinessSignupResponse": {
+      "uid": "string",
+      "customToken": "string",
+      "business": "BusinessDetail"
+    },
+    "MagicLinkRequest": {
+      "email": "string",
+      "redirectUrl": "string | null"
+    },
+    "MagicLinkResponse": {
+      "token": "string",
+      "expiresAtUtc": "string (date-time)"
+    },
+    "MagicLinkConsumeRequest": {
+      "token": "string"
+    },
+    "MagicLinkStatusResponse": {
+      "token": "string",
+      "email": "string",
+      "expiresAtUtc": "string (date-time)",
+      "consumed": "boolean",
+      "consumedAtUtc": "string (date-time) | null",
+      "redirectUrl": "string | null"
+    },
+    "CreateBusinessRequest": {
+      "name": "string",
+      "slug": "string | null",
+      "type": "string | null",
+      "description": "string | null",
+      "logoUrl": "string | null",
+      "coverPhotoUrl": "string | null",
+      "contactEmail": "string | null",
+      "contactPhone": "string | null",
+      "website": "string | null",
+      "address": "string | null",
+      "city": "string | null",
+      "state": "string | null",
+      "country": "string | null"
+    },
+    "BusinessDetail": {
+      "id": "string",
+      "name": "string",
+      "slug": "string",
+      "logoUrl": "string | null",
+      "city": "string | null",
+      "state": "string | null",
+      "verified": "boolean",
+      "role": "string",
+      "status": "string",
+      "description": "string | null",
+      "type": "string | null",
+      "coverPhotoUrl": "string | null",
+      "contactEmail": "string | null",
+      "contactPhone": "string | null",
+      "website": "string | null",
+      "address": "string | null",
+      "country": "string | null",
+      "createdAtUtc": "string",
+      "updatedAtUtc": "string"
+    },
+    "BusinessDirectoryResponse": {
+      "items": "BusinessDirectoryItem[]"
+    },
+    "BusinessDirectoryItem": {
+      "id": "string",
+      "name": "string",
+      "city": "string | null",
+      "state": "string | null",
+      "logoUrl": "string | null",
+      "type": "string | null",
+      "verified": "boolean"
+    },
+    "UserBusinessMembershipResponse": {
+      "items": "UserBusinessMembershipItem[]"
+    },
+    "UserBusinessMembershipItem": {
+      "businessId": "string",
+      "businessName": "string",
+      "businessSlug": "string",
+      "logoUrl": "string | null",
+      "city": "string | null",
+      "state": "string | null",
+      "role": "string",
+      "status": "string"
+    },
+    "SigninRequest": {
+      "email": "string",
+      "password": "string"
+    },
+    "SigninResponse": {
+      "idToken": "string",
+      "refreshToken": "string",
+      "expiresIn": "string",
+      "uid": "string | null"
+    },
+    "ExchangeRequest": {
+      "externalUid": "string | null"
+    },
+    "ExchangeResponse": {
+      "firebaseToken": "string",
+      "uid": "string"
+    },
+    "LogoutRequest": {
+      "sessionId": "string | null"
+    },
     "ClaimsMap": {
       "description": "map of claimName->claimValue (string->string)",
       "example": {
         "role": "publisher",
         "tenant": "acme"
       }
+    },
+    "ClaimsArray": {
+      "description": "Array of role identifiers assigned to the user",
+      "items": "string"
     },
     "UserSession": {
       "id": "string",
@@ -2766,14 +4062,54 @@
     "LocationPreferencesRequest": {
       "savedLocations": "SavedLocation[]"
     },
+    "SaveOnboardingProgressRequest": {
+      "steps": "map<string, boolean> | null",
+      "nextStep": "string | null",
+      "completed": "boolean | null"
+    },
+    "OnboardingLocationRequest": {
+      "city": "string",
+      "state": "string",
+      "lat": "number",
+      "lon": "number"
+    },
+    "OnboardingGoalsRequest": {
+      "goals": "string[]"
+    },
+    "ConvertUserToBusinessRequest": {
+      "businessName": "string",
+      "website": "string | null",
+      "category": "string | null",
+      "city": "string | null",
+      "state": "string | null",
+      "bio": "string | null"
+    },
+    "OnboardingStatusResponse": {
+      "completed": "boolean",
+      "nextStep": "string | null",
+      "steps": "map<string, boolean>",
+      "goals": "string[]",
+      "location": "OnboardingLocation | null",
+      "updatedAtUtc": "string (date-time)"
+    },
+    "OnboardingLocation": {
+      "city": "string",
+      "state": "string",
+      "lat": "number",
+      "lon": "number"
+    },
     "PublisherEventSummary": {
       "id": "string",
       "title": "string",
       "startUtc": "string (date-time)",
       "status": "string",
+      "admissionType": "string",
+      "hasInternalTickets": "boolean",
       "ticketsSold": "integer",
       "views": "integer",
-      "heroImageUrl": "string | null"
+      "heroImageUrl": "string | null",
+      "promoted": "boolean",
+      "moderationStatus": "string"
     },
     "PublisherEventListResponse": {
       "items": "PublisherEventSummary[]",
@@ -2784,6 +4120,70 @@
     },
     "UploadEventImageRequest": {
       "description": "multipart/form-data payload with file (binary) and variant hero|gallery"
+    },
+    "ArchivableEventSummary": {
+      "id": "string",
+      "title": "string",
+      "startUtc": "string (date-time)",
+      "endUtc": "string (date-time) | null",
+      "status": "string",
+      "hasImage": "boolean"
+    },
+    "ArchivableEventsResponse": {
+      "cutoffUtc": "string (date-time)",
+      "items": "ArchivableEventSummary[]"
+    },
+    "ArchiveRunRequest": {
+      "olderThanDays": "integer | null",
+      "limit": "integer | null"
+    },
+    "ArchiveRunResponse": {
+      "attempted": "integer",
+      "archived": "integer",
+      "skipped": "integer",
+      "cutoffUtc": "string (date-time)"
+    },
+    "ArchiveCleanupRequest": {
+      "limit": "integer | null"
+    },
+    "ArchiveCleanupResponse": {
+      "processed": "integer",
+      "deletedImages": "integer",
+      "failures": "integer"
+    },
+    "ArchivedEventResponse": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "category": "string",
+      "tags": "string[]",
+      "startUtc": "string (date-time)",
+      "endUtc": "string (date-time)",
+      "timezone": "string",
+      "hasImage": "boolean",
+      "imageUrl": "string | null",
+      "archivedAtUtc": "string (date-time) | null"
+    },
+    "VenueDirectoryResponse": {
+      "items": "VenueDirectoryItem[]"
+    },
+    "VenueDirectoryItem": {
+      "id": "string",
+      "name": "string",
+      "address": "string | null",
+      "lat": "number | null",
+      "lon": "number | null",
+      "verified": "boolean"
+    },
+    "HostDirectoryResponse": {
+      "items": "HostDirectoryItem[]"
+    },
+    "HostDirectoryItem": {
+      "id": "string",
+      "name": "string",
+      "type": "string | null",
+      "siteUrl": "string | null",
+      "verified": "boolean"
     },
     "EventStatsResponse": {
       "views": "integer",
@@ -2965,7 +4365,20 @@
       "salesEndUtc": "string (date-time) | null"
     },
     "PurchaseTicketsRequest": {
-      "quantity": "integer"
+      "quantity": "integer",
+      "checkoutId": "string | null",
+      "recipientEmail": "string | null",
+      "recipientPhone": "string | null"
+    },
+    "RefundTicketRequest": {
+      "reason": "string | null",
+      "force": "boolean"
+    },
+    "TicketRefundResponse": {
+      "id": "string",
+      "status": "string",
+      "refundedAt": "string (date-time) | null",
+      "quantityRestored": "integer"
     },
     "TicketPurchaseResponse": {
       "id": "string",
@@ -2977,11 +4390,27 @@
       "createdAtUtc": "string (date-time)"
     },
     "StripeCheckoutResponse": {
+      "checkoutId": "string",
       "paymentIntentId": "string",
       "clientSecret": "string",
       "amount": "integer",
       "currency": "string",
       "status": "string"
+    },
+    "VerifyTicketRequest": {
+      "token": "string",
+      "checkIn": "boolean"
+    },
+    "VerifyTicketResponse": {
+      "valid": "boolean",
+      "purchaseId": "string",
+      "eventId": "string",
+      "userId": "string",
+      "status": "string",
+      "checkedIn": "boolean",
+      "alreadyCheckedIn": "boolean",
+      "checkedInAt": "string (date-time) | null",
+      "expiresAtUtc": "string (date-time) | null"
     },
     "SubmitEventReviewRequest": {
       "title": "string",
@@ -3078,6 +4507,121 @@
     "AttendeeListResponse": {
       "items": "AttendeeItem[]",
       "nextPageToken": "string | null"
+    },
+    "EventInteractionRequest": {
+      "type": "string (view|click|save|bookmark|share|ticket|map)",
+      "source": "string | null",
+      "metadata": "string | null"
+    },
+    "EventInteractionSummaryResponse": {
+      "eventId": "string",
+      "views": "integer",
+      "clicks": "integer",
+      "saves": "integer",
+      "bookmarks": "integer",
+      "shares": "integer",
+      "ticketClicks": "integer",
+      "mapOpens": "integer"
+    },
+    "RsvpRequest": {
+      "status": "string"
+    },
+    "EventRsvpSummaryResponse": {
+      "going": "integer",
+      "interested": "integer",
+      "bookmarked": "integer",
+      "updatedAt": "string (date-time)"
+    },
+    "EventRsvpDoc": {
+      "id": "string",
+      "eventId": "string",
+      "userId": "string",
+      "status": "string",
+      "createdAt": "string (date-time)",
+      "updatedAt": "string (date-time)"
+    },
+    "EventPlaylistSummary": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "requiresLocation": "boolean"
+    },
+    "EventPlaylistListResponse": {
+      "items": "EventPlaylistSummary[]"
+    },
+    "EventPlaylistResponse": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "items": "EventResponse[]"
+    },
+    "EventPlaylistAdminResponse": {
+      "id": "string",
+      "title": "string",
+      "description": "string | null",
+      "query": "string | null",
+      "category": "string | null",
+      "creatorType": "string | null",
+      "sort": "string",
+      "maxEvents": "integer",
+      "daysFromOffset": "integer",
+      "daysToOffset": "integer",
+      "radiusKm": "integer | null",
+      "includePrivate": "boolean",
+      "requiresLocation": "boolean",
+      "defaultLat": "number | null",
+      "defaultLon": "number | null",
+      "city": "string | null",
+      "state": "string | null",
+      "enabled": "boolean",
+      "displayOrder": "integer"
+    },
+    "EventPlaylistUpsertRequest": {
+      "title": "string",
+      "description": "string | null",
+      "query": "string | null",
+      "category": "string | null",
+      "creatorType": "string | null",
+      "sort": "string",
+      "maxEvents": "integer",
+      "daysFromOffset": "integer",
+      "daysToOffset": "integer",
+      "radiusKm": "integer | null",
+      "includePrivate": "boolean",
+      "requiresLocation": "boolean",
+      "defaultLat": "number | null",
+      "defaultLon": "number | null",
+      "city": "string | null",
+      "state": "string | null",
+      "enabled": "boolean",
+      "displayOrder": "integer"
+    },
+    "NotificationTemplateDoc": {
+      "id": "string",
+      "subject": "string",
+      "htmlBody": "string",
+      "textBody": "string",
+      "updatedAt": "string (date-time)"
+    },
+    "TicketInventoryAuditDoc": {
+      "id": "string",
+      "eventId": "string",
+      "ticketId": "string",
+      "userId": "string",
+      "delta": "integer",
+      "quantityAvailableAfter": "integer",
+      "reason": "string",
+      "checkoutSessionId": "string | null",
+      "purchaseId": "string | null",
+      "createdAt": "string (date-time)"
+    },
+    "SeedConfigResponse": {
+      "results": "SeedResult[]"
+    },
+    "SeedResult": {
+      "key": "string",
+      "status": "string",
+      "message": "string | null"
     }
   }
 }

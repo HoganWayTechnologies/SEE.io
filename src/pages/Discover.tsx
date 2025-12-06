@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import EventGrid from '../components/EventGrid'
-import UserMenu from '../components/UserMenu'
-import NotificationBell from '../components/NotificationBell'
-import { api, Event, formatEventsForDisplay, SearchParams } from '../services/api'
+import {
+  api,
+  Event,
+  formatEventsForDisplay,
+  SearchParams
+} from '../services/api'
+import CategoryCarousel from '../components/CategoryCarousel'
+import AdSlot from '../components/AdSlot'
+import Footer from '../components/Footer'
+import Seo from '../components/Seo'
+import SiteNav from '../components/SiteNav'
 
 type FilterState = {
   category: string
@@ -14,7 +22,13 @@ type FilterState = {
   city: string
   state: string
   radiusKm: string
+  venue: string
+  host: string
+  businessId: string
+  businessName: string
 }
+
+const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://see.io').replace(/\/$/, '')
 
 const defaultFilters: FilterState = {
   category: 'All',
@@ -24,27 +38,43 @@ const defaultFilters: FilterState = {
   forceDiscover: false,
   city: '',
   state: '',
-  radiusKm: '50'
+  radiusKm: '50',
+  venue: '',
+  host: '',
+  businessId: '',
+  businessName: ''
 }
 
 export default function Discover() {
+  const navigate = useNavigate()
+  const [searchParamsUrl] = useSearchParams()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [filters, setFilters] = useState<FilterState>({ ...defaultFilters })
   const [draftFilters, setDraftFilters] = useState<FilterState>({ ...defaultFilters })
-  const [showFilters, setShowFilters] = useState(false)
   const [nextPageToken, setNextPageToken] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [venueQuery, setVenueQuery] = useState('')
+  const [venueResults, setVenueResults] = useState<any[]>([])
+  const [venueStatus, setVenueStatus] = useState<string | null>(null)
+  const [hostQuery, setHostQuery] = useState('')
+  const [hostResults, setHostResults] = useState<any[]>([])
+  const [hostStatus, setHostStatus] = useState<string | null>(null)
+  const [businessQuery, setBusinessQuery] = useState('')
+  const [businessResults, setBusinessResults] = useState<any[]>([])
+  const [businessStatus, setBusinessStatus] = useState<string | null>(null)
 
   const buildSearchParams = (
     overrides: Partial<SearchParams> = {},
-    filtersOverride?: FilterState
+    filtersOverride?: FilterState,
+    searchOverride?: string
   ): SearchParams => {
     const activeFilters = filtersOverride || filters
     const params: SearchParams = {
       take: 12,
-      query: searchInput || undefined,
+      query: (searchOverride ?? searchInput) || undefined,
       enableDiscovery: activeFilters.enableDiscovery,
       forceDiscover: activeFilters.forceDiscover,
       status: activeFilters.status,
@@ -55,13 +85,16 @@ export default function Discover() {
     if (activeFilters.city) params.city = activeFilters.city
     if (activeFilters.state) params.state = activeFilters.state
     if (activeFilters.radiusKm) params.radiusKm = Number(activeFilters.radiusKm)
+    if (activeFilters.venue) params.venue = activeFilters.venue
+    if (activeFilters.host) params.host = activeFilters.host
+    if (activeFilters.businessId) params.businessId = activeFilters.businessId
     return { ...params, ...overrides }
   }
 
-  const fetchEvents = async (options: { append?: boolean; pageToken?: string; filtersOverride?: FilterState } = {}) => {
+  const fetchEvents = async (options: { append?: boolean; pageToken?: string; filtersOverride?: FilterState; searchOverride?: string } = {}) => {
     try {
       setLoading(true)
-      const params = buildSearchParams({ pageToken: options.pageToken }, options.filtersOverride)
+      const params = buildSearchParams({ pageToken: options.pageToken }, options.filtersOverride, options.searchOverride)
       const response = await api.searchEvents(params)
       const formatted = formatEventsForDisplay(response.items || [])
       setEvents(prev => options.append ? [...prev, ...formatted] : formatted)
@@ -77,12 +110,137 @@ export default function Discover() {
   }
 
   useEffect(() => {
-    fetchEvents()
-  }, [])
+    const tagFilter = searchParamsUrl.get('tag') || ''
+    const cityParam = searchParamsUrl.get('city') || ''
+    const stateParam = searchParamsUrl.get('state') || ''
+    const venueParam = searchParamsUrl.get('venue') || ''
+    const hostParam = searchParamsUrl.get('host') || ''
+    const businessIdParam = searchParamsUrl.get('businessId') || ''
+    const businessNameParam = searchParamsUrl.get('businessName') || ''
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+    const nextFilters = {
+      ...defaultFilters,
+      city: cityParam,
+      state: stateParam,
+      venue: venueParam,
+      host: hostParam,
+      businessId: businessIdParam,
+      businessName: businessNameParam
+    }
+
+    setSearchInput(tagFilter)
+    setDraftFilters(nextFilters)
+    setFilters(nextFilters)
+
+    fetchEvents({
+      filtersOverride: nextFilters,
+      searchOverride: tagFilter || undefined
+    })
+  }, [searchParamsUrl])
+
+  useEffect(() => {
+    const playlistIdParam = searchParamsUrl.get('playlistId')
+    if (!playlistIdParam) return
+    navigate(`/playlists?playlistId=${encodeURIComponent(playlistIdParam)}`)
+  }, [navigate, searchParamsUrl])
+
+  // Venue directory lookup
+  useEffect(() => {
+    let handle: number | null = null
+    if (!venueQuery || venueQuery.length < 2) {
+      setVenueResults([])
+      setVenueStatus(null)
+      return
+    }
+    setVenueStatus('Searching venues…')
+    handle = window.setTimeout(async () => {
+      try {
+        const resp = await api.fetchVenueDirectory(venueQuery, 15)
+        const items =
+          (Array.isArray((resp as any)?.items) && (resp as any).items) ||
+          (Array.isArray((resp as any)?.Items) && (resp as any).Items) ||
+          (Array.isArray(resp) ? resp : [])
+        setVenueResults(items)
+        setVenueStatus(items.length ? null : 'No venues found')
+      } catch (err: any) {
+        setVenueResults([])
+        setVenueStatus(err?.message || 'Unable to load venues')
+      }
+    }, 250)
+    return () => {
+      if (handle) window.clearTimeout(handle)
+    }
+  }, [venueQuery])
+
+  // Host directory lookup
+  useEffect(() => {
+    let handle: number | null = null
+    if (!hostQuery || hostQuery.length < 2) {
+      setHostResults([])
+      setHostStatus(null)
+      return
+    }
+    setHostStatus('Searching hosts…')
+    handle = window.setTimeout(async () => {
+      try {
+        const resp = await api.fetchHostDirectory(hostQuery, 15)
+        const items =
+          (Array.isArray((resp as any)?.items) && (resp as any).items) ||
+          (Array.isArray((resp as any)?.Items) && (resp as any).Items) ||
+          (Array.isArray(resp) ? resp : [])
+        setHostResults(items)
+        setHostStatus(items.length ? null : 'No hosts found')
+      } catch (err: any) {
+        setHostResults([])
+        setHostStatus(err?.message || 'Unable to load hosts')
+      }
+    }, 250)
+    return () => {
+      if (handle) window.clearTimeout(handle)
+    }
+  }, [hostQuery])
+
+  // Business directory lookup
+  useEffect(() => {
+    let handle: number | null = null
+    if (!businessQuery || businessQuery.length < 2) {
+      setBusinessResults([])
+      setBusinessStatus(null)
+      return
+    }
+    setBusinessStatus('Searching businesses…')
+    handle = window.setTimeout(async () => {
+      try {
+        const resp = await api.fetchBusinessDirectory(businessQuery, 15)
+        const items =
+          (Array.isArray((resp as any)?.items) && (resp as any).items) ||
+          (Array.isArray((resp as any)?.Items) && (resp as any).Items) ||
+          (Array.isArray(resp) ? resp : [])
+        setBusinessResults(items)
+        setBusinessStatus(items.length ? null : 'No businesses found')
+      } catch (err: any) {
+        setBusinessResults([])
+        setBusinessStatus(err?.message || 'Unable to load businesses')
+      }
+    }, 250)
+    return () => {
+      if (handle) window.clearTimeout(handle)
+    }
+  }, [businessQuery])
+
+  const handleNavSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchEvents()
+    const params = new URLSearchParams()
+    if (searchInput.trim()) params.set('tag', searchInput.trim())
+    if (draftFilters.city.trim()) params.set('city', draftFilters.city.trim())
+    if (draftFilters.state.trim()) params.set('state', draftFilters.state.trim())
+    if (draftFilters.venue.trim()) params.set('venue', draftFilters.venue.trim())
+    if (draftFilters.host.trim()) params.set('host', draftFilters.host.trim())
+    if (draftFilters.businessId.trim()) {
+      params.set('businessId', draftFilters.businessId.trim())
+      if (draftFilters.businessName.trim()) params.set('businessName', draftFilters.businessName.trim())
+    }
+    navigate(`/discover${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
   const handleLoadMore = () => {
@@ -91,13 +249,6 @@ export default function Discover() {
     }
   }
 
-  const openFilters = () => {
-    setDraftFilters({ ...filters })
-    setShowFilters(true)
-  }
-
-  const closeFilters = () => setShowFilters(false)
-
   const handleFilterChange = (key: keyof FilterState, value: string | boolean) => {
     setDraftFilters(prev => ({ ...prev, [key]: value }))
   }
@@ -105,176 +256,254 @@ export default function Discover() {
   const applyFilters = () => {
     const nextFilters = { ...draftFilters }
     setFilters(nextFilters)
-    setShowFilters(false)
     fetchEvents({ filtersOverride: nextFilters })
   }
 
+  const navSearch = (
+    <form className="nav-search-form" onSubmit={handleNavSearchSubmit}>
+      <div className="nav-search-field">
+        <input
+          className="form-input nav-search-input"
+          placeholder="Search city, state, or vibe"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+        <button className="nav-search-button" type="submit" aria-label="Search events">
+          🔍
+        </button>
+      </div>
+    </form>
+  )
+
   return (
     <div>
+      <Seo
+        title="Discover Events"
+        description="Search SEE.io for concerts, festivals, and community events by playlist, category, and personalized filters."
+        canonical={`${SITE_URL}/discover`}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Discover Events | SEE.io',
+          url: `${SITE_URL}/discover`,
+          about: 'Local events and curated playlists'
+        }}
+      />
       {/* Navigation */}
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-          <Link to="/discover" className="nav-link active">Discover</Link>
-          <Link to="/saved" className="nav-link">Saved</Link>
-          <NotificationBell />
-          <UserMenu />
-        </div>
-      </div>
-      </nav>
+      <SiteNav activePath="/discover" searchSlot={navSearch} />
 
       {/* Page Content */}
-        <div className="container" style={{ padding: '2rem 0' }}>
-          <div style={{ marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '2.25rem', fontWeight: '700', color: 'var(--gray-900)', marginBottom: '0.5rem' }}>
-              Discover Events
-            </h1>
-            <p style={{ color: 'var(--gray-600)', fontSize: '1.125rem' }}>
-              Find the perfect event for you
+      <div className="container" style={{ padding: '2rem 0' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
+          <div>
+            <p style={{ textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.85rem', color: 'var(--primary-blue)', marginBottom: '0.35rem' }}>Live calendar</p>
+            <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0, color: 'var(--gray-900)' }}>Discover events</h1>
+            <p style={{ color: 'var(--gray-600)', fontSize: '1.1rem', marginTop: '0.35rem' }}>
+              Use search, filters, or playlists to surface the perfect plan.
             </p>
           </div>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setSidebarOpen(prev => !prev)}
+            aria-expanded={sidebarOpen}
+            aria-controls="discover-sidebar"
+          >
+            {sidebarOpen ? 'Hide filters' : 'Show filters'}
+          </button>
+        </div>
 
-        {/* Search + filter controls */}
-        <form onSubmit={handleSearchSubmit} className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>Search</h3>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              placeholder="Search by title, venue, city..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="form-input"
-              style={{ flex: 1, minWidth: '220px' }}
+        <div className="discover-layout" style={{ gridTemplateColumns: sidebarOpen ? 'minmax(260px, 320px) 1fr' : '1fr' }}>
+          {sidebarOpen && (
+            <aside id="discover-sidebar" className="discover-sidebar" style={{ position: 'sticky', top: '6rem', alignSelf: 'start' }}>
+              <div className="card">
+                <div className="card-body">
+                  <h3 className="card-title">Filters</h3>
+                  <div style={{ display: 'grid', gap: '0.75rem' }}>
+                    <div>
+                      <label className="form-label">Category</label>
+                      <select
+                        className="form-input"
+                        value={draftFilters.category}
+                        onChange={(e) => handleFilterChange('category', e.target.value)}
+                      >
+                        <option>All</option>
+                        <option>Music</option>
+                        <option>Food & Drink</option>
+                        <option>Tech</option>
+                        <option>Sports</option>
+                        <option>Wellness</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">Date</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={draftFilters.date}
+                        onChange={(e) => handleFilterChange('date', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Status</label>
+                      <input
+                        className="form-input"
+                        value={draftFilters.status}
+                        onChange={(e) => handleFilterChange('status', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">City</label>
+                      <input
+                        className="form-input"
+                        value={draftFilters.city}
+                        onChange={(e) => handleFilterChange('city', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">State</label>
+                      <input
+                        className="form-input"
+                        value={draftFilters.state}
+                        onChange={(e) => handleFilterChange('state', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Business</label>
+                      <input
+                        className="form-input"
+                        value={draftFilters.businessName}
+                        onChange={(e) => {
+                          handleFilterChange('businessName', e.target.value)
+                          setBusinessQuery(e.target.value)
+                        }}
+                        placeholder="Search business/organizer"
+                      />
+                      {businessStatus && <small style={{ color: 'var(--gray-600)' }}>{businessStatus}</small>}
+                      {businessResults.length > 0 && (
+                        <div className="card" style={{ marginTop: '0.35rem', maxHeight: '160px', overflowY: 'auto' }}>
+                          <div className="card-body" style={{ display: 'grid', gap: '0.35rem' }}>
+                            {businessResults.map((b: any) => (
+                              <button
+                                key={b.businessId || b.BusinessId || b.id || b.Id}
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{ textAlign: 'left' }}
+                                onClick={() => {
+                                  handleFilterChange('businessId', b.businessId || b.BusinessId || b.id || b.Id || '')
+                                  handleFilterChange('businessName', b.businessName || b.BusinessName || b.name || b.Name || '')
+                                  setBusinessQuery('')
+                                  setBusinessResults([])
+                                  setBusinessStatus(null)
+                                }}
+                              >
+                                <div style={{ fontWeight: 600 }}>{b.businessName || b.BusinessName || b.name || b.Name || 'Business'}</div>
+                                {(b.city || b.City || b.state || b.State) && (
+                                  <div style={{ color: 'var(--gray-600)', fontSize: '0.85rem' }}>
+                                    {[b.city || b.City, b.state || b.State].filter(Boolean).join(', ')}
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="form-label">Venue</label>
+                      <input
+                        className="form-input"
+                        value={draftFilters.venue}
+                        onChange={(e) => {
+                          handleFilterChange('venue', e.target.value)
+                          setVenueQuery(e.target.value)
+                        }}
+                        placeholder="Search venue"
+                      />
+                      {venueStatus && <small style={{ color: 'var(--gray-600)' }}>{venueStatus}</small>}
+                      {venueResults.length > 0 && (
+                        <div className="card" style={{ marginTop: '0.35rem', maxHeight: '160px', overflowY: 'auto' }}>
+                          <div className="card-body" style={{ display: 'grid', gap: '0.35rem' }}>
+                            {venueResults.map((v: any) => (
+                              <button
+                                key={v.id || v.venueId || v.Name}
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{ textAlign: 'left' }}
+                                onClick={() => {
+                                  handleFilterChange('venue', v.name || v.Name || '')
+                                  setVenueQuery('')
+                                  setVenueResults([])
+                                  setVenueStatus(null)
+                                }}
+                              >
+                                <div style={{ fontWeight: 600 }}>{v.name || v.Name || 'Venue'}</div>
+                                <div style={{ color: 'var(--gray-600)', fontSize: '0.85rem' }}>
+                                  {[v.address || v.Address, v.city || v.City, v.state || v.State].filter(Boolean).join(', ')}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="form-label">Radius (km)</label>
+                      <input
+                        className="form-input"
+                        value={draftFilters.radiusKm}
+                        onChange={(e) => handleFilterChange('radiusKm', e.target.value)}
+                      />
+                    </div>
+                    <button className="btn btn-secondary" type="button" onClick={applyFilters}>Apply filters</button>
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: '1rem' }}>
+                <AdSlot placementId="discover-rail" label="Local highlights" variant="rail" />
+              </div>
+            </aside>
+          )}
+
+          <div style={{ minWidth: 0 }}>
+            <CategoryCarousel subhead="Quickly explore events by theme." />
+
+            <EventGrid
+              events={events}
+              loading={loading}
+              error={error || undefined}
+              emptyMessage="No events match your filters. Try adjusting your search criteria."
             />
-            <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? 'Searching...' : 'Search'}
-            </button>
-            <button className="btn btn-secondary" type="button" onClick={openFilters}>
-              Filters
-            </button>
-          </div>
-        </form>
 
-        {/* Event Grid */}
-        <EventGrid
-          events={events}
-          loading={loading}
-          error={error || undefined}
-          emptyMessage="No events match your filters. Try adjusting your search criteria."
-        />
+            {nextPageToken && (
+              <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+                <button className="btn btn-secondary" onClick={handleLoadMore} disabled={loading}>
+                  {loading ? 'Loading...' : 'Load More'}
+                </button>
+              </div>
+            )}
 
-        {nextPageToken && (
-          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-            <button className="btn btn-secondary" onClick={handleLoadMore} disabled={loading}>
-              {loading ? 'Loading...' : 'Load More'}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {showFilters && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h3>Filters</h3>
-              <button className="modal-close" onClick={closeFilters}>&times;</button>
-            </div>
-            <div className="modal-body" style={{ display: 'grid', gap: '1rem' }}>
-              <div>
-                <label className="form-label">Category</label>
-                <select
-                  className="form-input"
-                  value={draftFilters.category}
-                  onChange={(e) => handleFilterChange('category', e.target.value)}
-                >
-                  <option>All</option>
-                  <option>Music</option>
-                  <option>Food & Drink</option>
-                  <option>Tech</option>
-                  <option>Sports</option>
-                  <option>Art & Culture</option>
-                </select>
-              </div>
-              <div>
-                <label className="form-label">Date</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={draftFilters.date}
-                  onChange={(e) => handleFilterChange('date', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="form-label">Status (comma separated)</label>
-                <input
-                  className="form-input"
-                  value={draftFilters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label className="form-label">City</label>
-                  <input
-                    className="form-input"
-                    value={draftFilters.city}
-                    onChange={(e) => handleFilterChange('city', e.target.value)}
-                    placeholder="Austin"
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label className="form-label">State</label>
-                  <input
-                    className="form-input"
-                    value={draftFilters.state}
-                    onChange={(e) => handleFilterChange('state', e.target.value)}
-                    placeholder="TX"
-                  />
+            <section style={{ marginTop: '2.5rem' }}>
+              <div className="card">
+                <div className="card-body" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 0.35rem 0' }}>Need curated vibes?</h3>
+                    <p style={{ margin: 0, color: 'var(--gray-600)' }}>
+                      Head to the playlists hub for swipeable collections and editorial spotlights.
+                    </p>
+                  </div>
+                  <Link to="/playlists" className="btn btn-primary">Browse playlists</Link>
                 </div>
               </div>
-              <div>
-                <label className="form-label">Radius (km)</label>
-                <input
-                  className="form-input"
-                  value={draftFilters.radiusKm}
-                  onChange={(e) => handleFilterChange('radiusKm', e.target.value)}
-                />
-              </div>
-              <label className="switch-row">
-                <span>Enable discovery fallback</span>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={draftFilters.enableDiscovery}
-                    onChange={(e) => handleFilterChange('enableDiscovery', e.target.checked)}
-                  />
-                  <span className="slider" />
-                </label>
-              </label>
-              <label className="switch-row">
-                <span>Force discovery mode</span>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={draftFilters.forceDiscover}
-                    onChange={(e) => handleFilterChange('forceDiscover', e.target.checked)}
-                  />
-                  <span className="slider" />
-                </label>
-              </label>
-            </div>
-            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-              <button className="btn btn-secondary" onClick={() => { setDraftFilters({ ...defaultFilters }); }}>
-                Reset
-              </button>
-              <button className="btn btn-primary" onClick={applyFilters}>
-                Apply
-              </button>
+            </section>
+
+            <div style={{ marginTop: '2rem' }}>
+              <AdSlot placementId="discover-bottom-banner" label="Discover Footer Ad" />
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      <Footer />
     </div>
   )
 }

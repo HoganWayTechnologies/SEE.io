@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "SignalR message contracts for /ws/updates hub. All messages are server-to-client. Clients must connect with Bearer/Firebase ID token. Groups: user:{uid}, event:{eventId}.",
+  "messages": {
+    "ticketStatusUpdated": {
+      "payload": {
+        "purchaseId": "string",
+        "eventId": "string",
+        "ticketId": "string",
+        "userId": "string",
+        "status": "string",
+        "quantity": "integer",
+        "refundedAt": "string (date-time) | null",
+        "checkedIn": "boolean",
+        "checkedInAt": "string (date-time) | null"
+      },
+      "group": "user:{userId}"
+    },
+    "ticketDelivery": {
+      "payload": {
+        "purchaseId": "string",
+        "eventId": "string",
+        "ticketId": "string",
+        "channel": "string",
+        "success": "boolean",
+        "error": "string | null"
+      },
+      "group": "user:{userId}"
+    },
+    "rsvpSummaryUpdated": {
+      "payload": {
+        "eventId": "string",
+        "going": "integer",
+        "interested": "integer",
+        "bookmarked": "integer",
+        "updatedAt": "string (date-time)"
+      },
+      "group": "event:{eventId}"
+    },
+    "sessionRevoked": {
+      "payload": {
+        "sessionId": "string | null"
+      },
+      "group": "user:{userId}"
+    },
+    "notification": {
+      "payload": {
+        "id": "string",
+        "title": "string",
+        "body": "string",
+        "type": "string",
+        "createdAt": "string (date-time)",
+        "metadata": "object | null"
+      },
+      "group": "user:{userId}"
+    }
+  },
+  "hub": {
+    "url": "/ws/updates",
+    "methods": {
+      "server": [],
+      "client": [
+        "ticketStatusUpdated",
+        "ticketDelivery",
+        "rsvpSummaryUpdated",
+        "sessionRevoked",
+        "notification"
+      ]
+    },
+    "subscriptions": {
+      "default": "user:{uid} based on authenticated user",
+      "query": "Add ?eventId=evt1&eventId=evt2 to initial connection to join event groups",
+      "methods": {
+        "SubscribeEvent": "string eventId",
+        "UnsubscribeEvent": "string eventId",
+        "Ping": "no args"
+      }
+    }
+  }
+}

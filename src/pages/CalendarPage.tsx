@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import UserMenu from '../components/UserMenu'
 import { api, formatEventsForDisplay, Event, getUserIdFromProfile } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import SiteNav from '../components/SiteNav'
 
 export default function CalendarPage() {
   const auth = useAuth()
@@ -32,16 +32,13 @@ export default function CalendarPage() {
 
   return (
     <div>
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/calendar" className="nav-link active">Calendar</Link>
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        activePath="/calendar"
+        links={[
+          { to: '/discover', label: 'Discover' },
+          { to: '/calendar', label: 'Calendar' }
+        ]}
+      />
 
       <div className="container" style={{ padding: '3rem 0', maxWidth: '900px' }}>
         <header style={{ marginBottom: '1.5rem' }}>

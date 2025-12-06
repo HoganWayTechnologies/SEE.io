@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import UserMenu from '../components/UserMenu'
-import NotificationBell from '../components/NotificationBell'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
+import SiteNav from '../components/SiteNav'
 
 type BuilderState = {
   draft: any | null
@@ -13,9 +12,29 @@ type BuilderState = {
   status: string | null
 }
 
+const defaultBlockPalette = [
+  { type: 'hero', label: 'Hero Banner', description: 'Large visual entry with CTA', icon: '🦸' },
+  { type: 'text', label: 'Rich Text', description: 'Paragraphs, updates, recaps', icon: '📝' },
+  { type: 'image', label: 'Spotlight Image', description: 'Single image with caption', icon: '🖼️' },
+  { type: 'gallery', label: 'Gallery', description: 'Multiple media tiles', icon: '📸' },
+  { type: 'cta', label: 'Call To Action', description: 'Highlight links or sponsors', icon: '🎯' },
+  { type: 'faq', label: 'FAQ', description: 'Answer attendee questions', icon: '❓' },
+  { type: 'tickets', label: 'Tickets Block', description: 'Promote ticket tiers', icon: '🎟️' }
+]
+
 export default function PageBuilderPage() {
   const { eventId } = useParams()
   const auth = useAuth()
+  const businessId = useMemo(() => {
+    return (
+      auth.primaryBusinessId ||
+      auth.profile?.primaryBusinessId ||
+      auth.profile?.businessId ||
+      auth.profile?.business?.id ||
+      auth.profile?.business?.businessId ||
+      null
+    )
+  }, [auth.primaryBusinessId, auth.profile])
   const [builder, setBuilder] = useState<BuilderState>({
     draft: null,
     published: null,
@@ -32,49 +51,88 @@ export default function PageBuilderPage() {
   const [draftBlocks, setDraftBlocks] = useState<any[]>([])
   const [theme, setTheme] = useState<string>('default')
   const [palette, setPalette] = useState<string | null>(null)
-  const [selectedType, setSelectedType] = useState<string>('hero')
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return window.localStorage.getItem('seeBuilderOnboarded') !== '1'
+  })
+  const dismissOnboarding = () => {
+    setShowOnboarding(false)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('seeBuilderOnboarded', '1')
+    }
+  }
 
-  const catalogBlocks = useMemo(() => builder.catalog?.blocks || [], [builder.catalog])
+  const paletteBlocks = useMemo(() => {
+    if (builder.catalog?.blocks && builder.catalog.blocks.length > 0) return builder.catalog.blocks
+    return defaultBlockPalette
+  }, [builder.catalog])
+
+  const normalizeBlock = useCallback((block: any) => ({
+    ...block,
+    id: block.id || block.Id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
+    type: block.type || block.Type,
+    order: block.order ?? block.Order ?? 0,
+    settings: block.settings || block.Settings || {}
+  }), [])
+
+  const reloadBuilder = useCallback(async () => {
+    if (!eventId || !auth.idToken) {
+      setBuilder(prev => ({ ...prev, status: 'Sign in to edit pages.' }))
+      return
+    }
+    try {
+      const [page, catalog, history, usageResp, mediaResp] = await Promise.all([
+        api.fetchEventPage(eventId, auth.idToken, businessId || undefined),
+        api.fetchEventPageCatalog(eventId, auth.idToken, businessId || undefined),
+        api.fetchPageHistory(eventId, auth.idToken, businessId || undefined),
+        api.fetchPageUsage(eventId, auth.idToken, businessId || undefined),
+        api.fetchEventMedia(eventId, auth.idToken, businessId || undefined)
+      ])
+      const draft = page?.draft || page?.Draft || null
+      const published = page?.published || page?.Published || null
+      const histItems =
+        (Array.isArray(history?.items) && history.items) ||
+        (Array.isArray((history as any)?.Items) && (history as any).Items) ||
+        history ||
+        []
+      setBuilder({
+        draft,
+        published,
+        catalog: catalog || null,
+        history: Array.isArray(histItems) ? histItems : [],
+        status: null
+      })
+      setUsage(usageResp || null)
+      const mediaItems =
+        (Array.isArray(mediaResp?.items) && mediaResp.items) ||
+        (Array.isArray((mediaResp as any)?.Items) && (mediaResp as any).Items) ||
+        (Array.isArray(mediaResp) ? mediaResp : [])
+      setMedia(mediaItems)
+      setDraftBlocks((draft?.blocks || draft?.Blocks || []).map(normalizeBlock))
+      setTheme(draft?.theme || draft?.Theme || 'default')
+      setPalette(draft?.palette || draft?.Palette || null)
+    } catch (err: any) {
+      setBuilder(prev => ({ ...prev, status: err?.message || 'Failed to load builder' }))
+    }
+  }, [eventId, auth.idToken, businessId, normalizeBlock])
 
   useEffect(() => {
-    const load = async () => {
-      if (!eventId || !auth.idToken) {
-        setBuilder(prev => ({ ...prev, status: 'Sign in to edit pages.' }))
-        return
-      }
-      try {
-        const [page, catalog, history, usageResp, mediaResp] = await Promise.all([
-          api.fetchEventPage(eventId, auth.idToken),
-          api.fetchEventPageCatalog(eventId, auth.idToken),
-          api.fetchPageHistory(eventId, auth.idToken),
-          api.fetchPageUsage(eventId, auth.idToken),
-          api.fetchEventMedia(eventId, auth.idToken)
-        ])
-        setBuilder({
-          draft: page?.draft || null,
-          published: page?.published || null,
-          catalog: catalog || null,
-          history: history?.items || history || [],
-          status: null
-        })
-        setUsage(usageResp || null)
-        setMedia(Array.isArray(mediaResp?.items) ? mediaResp.items : (mediaResp || []))
-        setDraftBlocks(page?.draft?.blocks || [])
-        setTheme(page?.draft?.theme || 'default')
-        setPalette(page?.draft?.palette || null)
-      } catch (err: any) {
-        setBuilder(prev => ({ ...prev, status: err?.message || 'Failed to load builder' }))
-      }
-    }
-    load()
-  }, [eventId, auth.idToken])
+    reloadBuilder()
+  }, [reloadBuilder])
 
   const handlePublish = async () => {
     if (!eventId || !auth.idToken) return
     setSaveStatus('Publishing...')
     try {
-      await api.publishEventPage(eventId, { expectedRevision: builder.draft?.revision || null }, auth.idToken)
+      await api.publishEventPage(
+        eventId,
+        { expectedRevision: builder.draft?.revision || builder.draft?.Revision || null },
+        auth.idToken,
+        businessId || undefined
+      )
       setSaveStatus('Published!')
+      await reloadBuilder()
     } catch (err: any) {
       setSaveStatus(err?.message || 'Publish failed')
     }
@@ -84,12 +142,19 @@ export default function PageBuilderPage() {
     if (!eventId || !auth.idToken) return
     setSaveStatus('Saving draft...')
     try {
-      await api.saveEventPage(eventId, {
-        theme,
-        palette,
-        blocks: draftBlocks.map((b, idx) => ({ ...b, order: idx }))
-      }, auth.idToken)
+      await api.saveEventPage(
+        eventId,
+        {
+          theme,
+          palette,
+          expectedRevision: builder.draft?.revision || builder.draft?.Revision || null,
+          blocks: draftBlocks.map((b, idx) => ({ ...b, order: idx }))
+        },
+        auth.idToken,
+        businessId || undefined
+      )
       setSaveStatus('Draft saved')
+      await reloadBuilder()
     } catch (err: any) {
       setSaveStatus(err?.message || 'Save failed')
     }
@@ -99,7 +164,12 @@ export default function PageBuilderPage() {
     if (!eventId || !auth.idToken) return
     setSaveStatus('Generating preview...')
     try {
-      const tokenResp = await api.requestPagePreviewToken(eventId, {}, auth.idToken)
+      const tokenResp = await api.requestPagePreviewToken(
+        eventId,
+        { expectedRevision: builder.draft?.revision || builder.draft?.Revision || null },
+        auth.idToken,
+        businessId || undefined
+      )
       setPreviewToken(tokenResp?.token || tokenResp?.previewToken || null)
       setSaveStatus('Preview link ready')
     } catch (err: any) {
@@ -107,14 +177,30 @@ export default function PageBuilderPage() {
     }
   }
 
+  const handleRevokePreview = async () => {
+    if (!eventId || !auth.idToken || !previewToken) return
+    setSaveStatus('Revoking preview…')
+    try {
+      await api.revokePagePreviewToken(eventId, previewToken, auth.idToken, businessId || undefined)
+      setPreviewToken(null)
+      setSaveStatus('Preview link revoked.')
+    } catch (err: any) {
+      setSaveStatus(err?.message || 'Unable to revoke preview link')
+    }
+  }
+
   const handleDiscardDraft = async () => {
     if (!eventId || !auth.idToken) return
     setSaveStatus('Discarding draft...')
     try {
-      const resp = await api.discardPageDraft(eventId, auth.idToken)
-      setBuilder(prev => ({ ...prev, draft: resp?.draft || null }))
-      setDraftBlocks(resp?.draft?.blocks || [])
-      setSaveStatus('Draft discarded')
+      const resp = await api.discardPageDraft(eventId, auth.idToken, businessId || undefined)
+      const draft = resp?.draft || resp?.Draft || null
+      setBuilder(prev => ({ ...prev, draft }))
+      setDraftBlocks((draft?.blocks || draft?.Blocks || []).map((b: any) => ({
+        ...b,
+        id: b.id || b.Id || crypto.randomUUID?.() || Math.random().toString(36).slice(2)
+      })))
+      setSaveStatus('Draft discarded; reverted to last published.')
     } catch (err: any) {
       setSaveStatus(err?.message || 'Discard failed')
     }
@@ -124,11 +210,8 @@ export default function PageBuilderPage() {
     if (!eventId || !auth.idToken) return
     setSaveStatus('Restoring version...')
     try {
-      await api.restorePageVersion(eventId, versionId, {}, auth.idToken)
-      const refreshed = await api.fetchEventPage(eventId, auth.idToken)
-      setDraftBlocks(refreshed?.draft?.blocks || [])
-      setTheme(refreshed?.draft?.theme || 'default')
-      setPalette(refreshed?.draft?.palette || null)
+      await api.restorePageVersion(eventId, versionId, {}, auth.idToken, businessId || undefined)
+      await reloadBuilder()
       setSaveStatus('Version restored to draft')
     } catch (err: any) {
       setSaveStatus(err?.message || 'Restore failed')
@@ -139,7 +222,7 @@ export default function PageBuilderPage() {
     if (!eventId || !auth.idToken || !file) return
     setMediaStatus('Uploading...')
     try {
-      const uploaded = await api.uploadEventMedia(eventId, file, auth.idToken)
+      const uploaded = await api.uploadEventMedia(eventId, file, auth.idToken, businessId || undefined)
       setMedia(prev => [uploaded, ...prev])
       setMediaStatus('Uploaded')
     } catch (err: any) {
@@ -186,6 +269,28 @@ export default function PageBuilderPage() {
   const removeBlock = (blockId: string) => {
     setDraftBlocks(prev => prev.filter(b => b.id !== blockId))
   }
+
+  const reorderBlocks = useCallback((blocks: any[], sourceId: string, targetId: string) => {
+    const sourceIndex = blocks.findIndex(b => b.id === sourceId)
+    const targetIndex = blocks.findIndex(b => b.id === targetId)
+    if (sourceIndex === -1 || targetIndex === -1) return blocks
+    const updated = [...blocks]
+    const [moved] = updated.splice(sourceIndex, 1)
+    updated.splice(targetIndex, 0, moved)
+    return updated.map((block, index) => ({ ...block, order: index }))
+  }, [])
+
+  const handleDragOverBlock = useCallback(
+    (targetId: string) => (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault()
+      if (!draggingId || draggingId === targetId) return
+      setDraftBlocks(prev => reorderBlocks(prev, draggingId, targetId))
+    },
+    [draggingId, reorderBlocks]
+  )
+
+  const handleDragStart = (blockId: string) => () => setDraggingId(blockId)
+  const handleDragEnd = () => setDraggingId(null)
 
   const renderBlockEditor = (block: any) => {
     const settings = block.settings || {}
@@ -279,23 +384,33 @@ export default function PageBuilderPage() {
 
   return (
     <div>
-      <nav className="nav">
-        <div className="container nav-container">
-          <Link to="/" className="nav-brand">SEE.io</Link>
-          <div className="nav-links">
-            <Link to="/discover" className="nav-link">Discover</Link>
-            <Link to="/publisher" className="nav-link">Publisher Console</Link>
-            <NotificationBell />
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        activePath="/publisher"
+        links={[
+          { to: '/discover', label: 'Discover' },
+          { to: '/publisher', label: 'Publisher Console' }
+        ]}
+      />
 
       <div className="container" style={{ padding: '3rem 0' }}>
         <header style={{ marginBottom: '1.5rem' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>Event Page Builder</h1>
           <p style={{ color: 'var(--gray-600)' }}>Manage branding, layout, and custom links for your event page.</p>
         </header>
+
+        {showOnboarding && (
+          <div className="card" style={{ marginBottom: '1.25rem', border: '2px solid var(--primary-blue)' }}>
+            <div className="card-body">
+              <h3 className="card-title">Getting started</h3>
+              <ol style={{ color: 'var(--gray-700)', paddingLeft: '1.25rem' }}>
+                <li>Select a block from the palette to add it to your draft.</li>
+                <li>Drag blocks using the handle to reorder sections.</li>
+                <li>Upload media for hero or gallery blocks, then publish to go live.</li>
+              </ol>
+              <button className="btn btn-primary" onClick={dismissOnboarding}>Got it</button>
+            </div>
+          </div>
+        )}
 
         {builder.status && <p style={{ color: 'var(--gray-600)' }}>{builder.status}</p>}
 
@@ -305,35 +420,50 @@ export default function PageBuilderPage() {
               <div className="card-body">
                 <h3 className="card-title">Draft Layout</h3>
                 <p style={{ color: 'var(--gray-600)' }}>Edit your blocks and publish to update the live event page.</p>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', margin: '0.5rem 0' }}>
-                  <select className="form-input" value={selectedType} onChange={(e) => setSelectedType(e.target.value)} style={{ maxWidth: '200px' }}>
-                    {catalogBlocks.length === 0 && (
-                      <>
-                        <option value="hero">Hero</option>
-                        <option value="text">Text</option>
-                        <option value="image">Image</option>
-                        <option value="cta">CTA</option>
-                        <option value="faq">FAQ</option>
-                        <option value="gallery">Gallery</option>
-                      </>
-                    )}
-                    {catalogBlocks.length > 0 && catalogBlocks.map((b: any) => (
-                      <option key={b.type} value={b.type}>{b.label || b.type}</option>
-                    ))}
-                  </select>
-                  <button className="btn btn-secondary" onClick={() => addBlock(selectedType)}>Add Block</button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', margin: '0.5rem 0 1rem 0' }}>
+                  {paletteBlocks.map((block: any) => (
+                    <button
+                      key={block.type}
+                      type="button"
+                      className="card"
+                      onClick={() => addBlock(block.type)}
+                      style={{ textAlign: 'left', padding: '0.75rem', cursor: 'pointer' }}
+                    >
+                      <div style={{ fontSize: '1.25rem' }}>{block.icon || '⬜️'}</div>
+                      <div style={{ fontWeight: 600 }}>{block.label || block.type}</div>
+                      <div style={{ color: 'var(--gray-600)', fontSize: '0.85rem' }}>
+                        {block.description || 'Custom content block'}
+                      </div>
+                    </button>
+                  ))}
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                   <label style={{ fontWeight: 600 }}>Theme</label>
                   <input className="form-input" style={{ maxWidth: '180px' }} value={theme} onChange={(e) => setTheme(e.target.value)} />
                   <input className="form-input" style={{ maxWidth: '180px' }} placeholder="Palette" value={palette || ''} onChange={(e) => setPalette(e.target.value || null)} />
                 </div>
-                {draftBlocks.length === 0 && <p style={{ color: 'var(--gray-600)' }}>No blocks yet.</p>}
+                {draftBlocks.length === 0 && <p style={{ color: 'var(--gray-600)' }}>No blocks yet. Start by selecting a block type above.</p>}
                 {draftBlocks.map(block => (
-                  <div key={block.id} className="card" style={{ marginBottom: '0.5rem', background: 'var(--gray-50)' }}>
+                  <div
+                    key={block.id}
+                    className="card"
+                    draggable
+                    onDragStart={handleDragStart(block.id)}
+                    onDragOver={handleDragOverBlock(block.id)}
+                    onDragEnd={handleDragEnd}
+                    style={{
+                      marginBottom: '0.5rem',
+                      background: draggingId === block.id ? 'var(--light-purple)' : 'var(--gray-50)',
+                      border: draggingId === block.id ? '1px dashed var(--primary-blue)' : undefined,
+                      cursor: 'grab'
+                    }}
+                  >
                     <div className="card-body">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <strong>{block.type}</strong>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '1.25rem' }}>↕️</span>
+                          <strong>{block.type}</strong>
+                        </div>
                         <button className="btn btn-secondary" onClick={() => removeBlock(block.id)}>Remove</button>
                       </div>
                       {renderBlockEditor(block)}
@@ -345,6 +475,7 @@ export default function PageBuilderPage() {
                 <button className="btn btn-primary" style={{ marginLeft: '0.5rem' }} onClick={handlePublish}>Publish</button>
                 <button className="btn btn-secondary" style={{ marginLeft: '0.5rem' }} onClick={handlePreview}>Preview Link</button>
                   <button className="btn btn-secondary" onClick={handleDiscardDraft}>Discard Draft</button>
+                  <button className="btn btn-secondary" onClick={reloadBuilder}>Refresh</button>
                 </div>
                 {saveStatus && <p style={{ color: 'var(--gray-600)', marginTop: '0.5rem' }}>{saveStatus}</p>}
                 {previewToken && (
@@ -355,6 +486,9 @@ export default function PageBuilderPage() {
                       <Link to={`/event/${eventId}?previewToken=${previewToken}`} className="btn btn-secondary">
                         Open preview
                       </Link>
+                      <button className="btn btn-secondary" style={{ marginLeft: '0.5rem' }} onClick={handleRevokePreview}>
+                        Revoke
+                      </button>
                     </div>
                   </div>
                 )}
@@ -401,7 +535,10 @@ export default function PageBuilderPage() {
         {!builder.status && (
           <div className="card" style={{ marginTop: '1rem' }}>
             <div className="card-body">
-              <h3 className="card-title">Page History</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 className="card-title" style={{ margin: 0 }}>Page History</h3>
+                <button className="btn btn-secondary" type="button" onClick={reloadBuilder}>Reload</button>
+              </div>
               {builder.history && builder.history.length === 0 && <p style={{ color: 'var(--gray-600)' }}>No published versions yet.</p>}
               {builder.history && builder.history.length > 0 && (
                 <ul style={{ paddingLeft: '1.25rem' }}>

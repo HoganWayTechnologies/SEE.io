@@ -5,39 +5,40 @@
   "type": "module",
   "scripts": {
     "client": "vite",
-  "server": "node --loader ts-node/esm server/index.ts",
+    "server": "node --loader ts-node/esm server/index.ts",
     "dev": "npm run client",
     "build": "vite build",
     "start": "node server/dist/index.js",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx"
   },
   "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "axios": "^1.4.0",
+    "firebase": "latest",
+    "firebase-admin": "^13.6.0",
     "react": "latest",
     "react-dom": "latest",
-    "axios": "^1.4.0",
     "react-router-dom": "^6.18.0",
-    "vite": "^5.0.0",
-    "@vitejs/plugin-react": "^5.1.0",
-    "firebase": "latest",
-    "firebase-admin": "^13.6.0"
+    "vite": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "tailwindcss": "latest",
-    "postcss": "latest",
+    "@tailwindcss/postcss": "latest",
+    "@types/cookie-parser": "^1.4.3",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.5.1",
+    "@types/react-router-dom": "^5.3.3",
     "autoprefixer": "latest",
-  "@tailwindcss/postcss": "latest",
+    "concurrently": "^8.2.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
     "eslint": "^9.8.0",
     "eslint-config-next": "latest",
-    "concurrently": "^8.2.0",
-    "ts-node-dev": "^2.0.0",
     "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "cookie-parser": "^1.4.6",
-    "@types/express": "^4.17.17",
-    "@types/cookie-parser": "^1.4.3",
-    "@types/node": "^20.5.1",
-    "@types/react-router-dom": "^5.3.3"
+    "postcss": "latest",
+    "tailwindcss": "latest",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.2.2"
   },
   "overrides": {
     "esbuild": "0.24.2"

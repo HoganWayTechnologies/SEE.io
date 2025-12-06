@@ -393,6 +393,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .nav-brand {
@@ -404,8 +406,9 @@ body {
 
 .nav-links {
   display: flex;
-  gap: 2rem;
+  gap: 1.25rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .nav-link {
@@ -421,6 +424,54 @@ body {
 
 .nav-link.active {
   color: var(--primary-blue);
+}
+
+.nav-search-wrapper {
+  flex: 1 1 260px;
+  max-width: 540px;
+  min-width: 240px;
+}
+
+.nav-search-form {
+  width: 100%;
+}
+
+.nav-search-field {
+  position: relative;
+  width: 100%;
+}
+
+.nav-search-input {
+  width: 100%;
+  border-radius: 999px;
+  padding-right: 3rem;
+  height: 44px;
+}
+
+.nav-search-button {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  min-width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--primary-blue);
+  color: var(--white);
+  cursor: pointer;
+}
+
+.nav-hamburger {
+  display: none;
+  border: none;
+  background: var(--white);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
 }
 
 .user-menu {
@@ -499,6 +550,17 @@ body {
   right: -10px;
 }
 
+.discover-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.discover-sidebar {
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+}
+
 /* Forms */
 .form-group {
   margin-bottom: 1rem;
@@ -527,7 +589,7 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .hero h1 {
     font-size: 2.25rem;
   }
@@ -548,8 +610,41 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .nav-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .nav-links {
-    display: none; /* Mobile menu would need JS */
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    display: none;
+  }
+
+  .nav-links.nav-links-open {
+    display: flex;
+  }
+
+  .nav-search-wrapper {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .nav-hamburger {
+    display: inline-flex;
+  }
+
+  .discover-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .discover-sidebar {
+    position: static !important;
+    width: 100%;
   }
 }
 
