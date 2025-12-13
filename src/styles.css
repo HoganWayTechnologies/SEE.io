@@ -211,6 +211,16 @@ body {
   font-weight: 500;
 }
 
+.chip-outline {
+  background-color: var(--white);
+  border: 1px solid var(--gray-300);
+}
+
+.chip-small {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+}
+
 .chip-active {
   background-color: var(--light-blue);
   border-color: var(--primary-blue);

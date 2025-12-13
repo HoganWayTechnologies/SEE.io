@@ -17,6 +17,8 @@
     "axios": "^1.4.0",
     "firebase": "latest",
     "firebase-admin": "^13.6.0",
+    "html5-qrcode": "^2.3.8",
+    "qrcode": "^1.5.4",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "^6.18.0",

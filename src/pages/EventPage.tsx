@@ -390,6 +390,16 @@ export default function EventPage() {
 
       // Paid tickets: require Stripe checkout to succeed; do not fall back automatically.
       const checkout = await api.createStripeCheckout(id, selectedTicketId, ticketQuantity, idToken)
+      const redirectUrl =
+        checkout?.url ||
+        checkout?.checkoutUrl ||
+        checkout?.checkoutSessionUrl ||
+        checkout?.stripeUrl ||
+        checkout?.redirectUrl
+      if (redirectUrl) {
+        window.location.href = redirectUrl
+        return
+      }
       if (checkout?.clientSecret || checkout?.paymentIntentId || checkout?.checkoutId) {
         setPurchaseStatus('Stripe checkout created. Complete payment to finalize your ticket.')
         return
@@ -489,10 +499,14 @@ export default function EventPage() {
   const isSeeTicketed = normalizedAdmissionType === 'see_ticketed' && hasInternalTicketing
   const isFreeAdmission = normalizedAdmissionType === 'free'
   const isExternalTicketed = normalizedAdmissionType === 'external_ticketed' && !hasInternalTicketing
+  const isCanceled = (event.status || '').toLowerCase() === 'canceled'
+  const isRejected = (event.status || '').toLowerCase() === 'rejected'
+  const isInactive = isCanceled || isRejected
   const isDiscountEvent = normalizedTags.some(tag =>
     ['groupon', 'discount', 'deal'].includes(tag)
   )
   const pricingHeading = (() => {
+    if (isCanceled) return 'Event canceled'
     if (isSeeTicketed && event.price) return event.price
     if (isSeeTicketed) return 'Tickets available'
     if (isFreeAdmission) return 'Free event'
@@ -502,6 +516,7 @@ export default function EventPage() {
     return 'Ticket details TBA'
   })()
   const pricingSubtext = (() => {
+    if (isCanceled) return 'This event has been canceled.'
     if (isSeeTicketed && event.price) return 'per ticket'
     if (isSeeTicketed) return 'Tickets sold on SEE'
     if (isFreeAdmission) return 'No purchase required'
@@ -827,32 +842,34 @@ export default function EventPage() {
                   </p>
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.35rem' }}>RSVP</h4>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {(['going', 'interested', 'bookmark'] as const).map(key => (
-                      <button
-                        key={key}
-                        className={`chip ${rsvpStatus === key ? 'chip-active' : ''}`}
-                        type="button"
-                        onClick={() => handleRsvp(key)}
-                      >
-                        {key === 'going' ? 'Going' : key === 'interested' ? 'Interested' : 'Save'}
-                      </button>
-                    ))}
-                    {rsvpStatus && rsvpStatus !== 'none' && (
-                      <button className="chip" type="button" onClick={() => handleRsvp('none')}>Clear</button>
-                    )}
-                  </div>
-                  {rsvpSummary && (
-                    <div style={{ marginTop: '0.4rem', fontSize: '0.9rem', color: 'var(--gray-600)' }}>
-                      Going {rsvpSummary.going ?? 0} · Interested {rsvpSummary.interested ?? 0} · Saved {rsvpSummary.bookmark ?? 0}
+                {!isInactive && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.35rem' }}>RSVP</h4>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {(['going', 'interested', 'bookmark'] as const).map(key => (
+                        <button
+                          key={key}
+                          className={`chip ${rsvpStatus === key ? 'chip-active' : ''}`}
+                          type="button"
+                          onClick={() => handleRsvp(key)}
+                        >
+                          {key === 'going' ? 'Going' : key === 'interested' ? 'Interested' : 'Save'}
+                        </button>
+                      ))}
+                      {rsvpStatus && rsvpStatus !== 'none' && (
+                        <button className="chip" type="button" onClick={() => handleRsvp('none')}>Clear</button>
+                      )}
                     </div>
-                  )}
-                  {rsvpMessage && <div style={{ fontSize: '0.9rem', color: 'var(--gray-600)', marginTop: '0.25rem' }}>{rsvpMessage}</div>}
-                </div>
+                    {rsvpSummary && (
+                      <div style={{ marginTop: '0.4rem', fontSize: '0.9rem', color: 'var(--gray-600)' }}>
+                        Going {rsvpSummary.going ?? 0} · Interested {rsvpSummary.interested ?? 0} · Saved {rsvpSummary.bookmark ?? 0}
+                      </div>
+                    )}
+                    {rsvpMessage && <div style={{ fontSize: '0.9rem', color: 'var(--gray-600)', marginTop: '0.25rem' }}>{rsvpMessage}</div>}
+                  </div>
+                )}
 
-                {isSeeTicketed && (
+                {isSeeTicketed && !isInactive && (
                   <>
                     {tickets.length > 0 ? (
                       <div style={{ marginBottom: '1.5rem' }}>
@@ -914,7 +931,7 @@ export default function EventPage() {
                   </p>
                 )}
 
-                {externalTicketUrl ? (
+                {!isInactive && externalTicketUrl ? (
                   <button
                     className="btn btn-secondary"
                     style={{ width: '100%', marginBottom: '1.5rem' }}
@@ -926,9 +943,9 @@ export default function EventPage() {
                   >
                     Tickets & Info
                   </button>
-                ) : (
+                ) : !isInactive ? (
                   <DeepLinkButton eventId={event.id} />
-                )}
+                ) : null}
 
                 <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--gray-200)' }}>
                   <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>Share this event</h4>

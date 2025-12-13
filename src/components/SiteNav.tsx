@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import NotificationBell from './NotificationBell'
 import UserMenu from './UserMenu'
 import { useAuth } from '../context/AuthContext'
+import { isAdmin, isBusiness } from '../utils/roles'
 
 type NavLinkItem = {
   to: string
@@ -29,14 +30,20 @@ export default function SiteNav({ links = defaultLinks, activePath, searchSlot }
   const auth = useAuth()
   const computedLinks = useMemo(() => {
     const merged = [...links]
-    if (auth?.primaryBusinessId) {
-      const businessLink = `/business/${auth.primaryBusinessId}`
-      if (!merged.some(link => link.to === businessLink)) {
-        merged.push({ to: businessLink, label: 'My Business', key: 'my-business' })
+    if (isBusiness(auth.profile, auth.primaryBusinessId, auth.businessMemberships)) {
+      const hostLink = '/host/analytics'
+      if (!merged.some(link => link.to === hostLink)) {
+        merged.push({ to: hostLink, label: 'Host Portal', key: 'host-portal' })
+      }
+    }
+    if (isAdmin(auth.profile)) {
+      const adminLink = '/reports'
+      if (!merged.some(link => link.to === adminLink)) {
+        merged.push({ to: adminLink, label: 'Admin', key: 'admin' })
       }
     }
     return merged
-  }, [links, auth?.primaryBusinessId])
+  }, [links, auth])
 
   useEffect(() => {
     setMenuOpen(false)

@@ -12,6 +12,8 @@ import AdSlot from '../components/AdSlot'
 import Footer from '../components/Footer'
 import Seo from '../components/Seo'
 import SiteNav from '../components/SiteNav'
+import VenueAttributeFilterPanel from '../components/VenueAttributeFilterPanel'
+import { VenueAttrKey, isVenueAttrKey } from '../constants/venueAttributes'
 
 type FilterState = {
   category: string
@@ -26,6 +28,8 @@ type FilterState = {
   host: string
   businessId: string
   businessName: string
+  attrs: VenueAttrKey[]
+  attrsMode: 'any' | 'all'
 }
 
 const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://see.io').replace(/\/$/, '')
@@ -42,7 +46,9 @@ const defaultFilters: FilterState = {
   venue: '',
   host: '',
   businessId: '',
-  businessName: ''
+  businessName: '',
+  attrs: [],
+  attrsMode: 'any'
 }
 
 export default function Discover() {
@@ -88,6 +94,10 @@ export default function Discover() {
     if (activeFilters.venue) params.venue = activeFilters.venue
     if (activeFilters.host) params.host = activeFilters.host
     if (activeFilters.businessId) params.businessId = activeFilters.businessId
+    if (activeFilters.attrs && activeFilters.attrs.length) {
+      if (activeFilters.attrsMode === 'all') params.attrsAll = activeFilters.attrs
+      else params.attrsAny = activeFilters.attrs
+    }
     return { ...params, ...overrides }
   }
 
@@ -117,6 +127,9 @@ export default function Discover() {
     const hostParam = searchParamsUrl.get('host') || ''
     const businessIdParam = searchParamsUrl.get('businessId') || ''
     const businessNameParam = searchParamsUrl.get('businessName') || ''
+    const attrsParam = searchParamsUrl.get('attrs') || ''
+    const attrsModeParam = searchParamsUrl.get('attrsMode') === 'all' ? 'all' : 'any'
+    const parsedAttrs = attrsParam.split(',').map(a => a.trim()).filter(isVenueAttrKey)
 
     const nextFilters = {
       ...defaultFilters,
@@ -125,7 +138,9 @@ export default function Discover() {
       venue: venueParam,
       host: hostParam,
       businessId: businessIdParam,
-      businessName: businessNameParam
+      businessName: businessNameParam,
+      attrs: parsedAttrs as VenueAttrKey[],
+      attrsMode: attrsModeParam
     }
 
     setSearchInput(tagFilter)
@@ -230,16 +245,7 @@ export default function Discover() {
 
   const handleNavSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const params = new URLSearchParams()
-    if (searchInput.trim()) params.set('tag', searchInput.trim())
-    if (draftFilters.city.trim()) params.set('city', draftFilters.city.trim())
-    if (draftFilters.state.trim()) params.set('state', draftFilters.state.trim())
-    if (draftFilters.venue.trim()) params.set('venue', draftFilters.venue.trim())
-    if (draftFilters.host.trim()) params.set('host', draftFilters.host.trim())
-    if (draftFilters.businessId.trim()) {
-      params.set('businessId', draftFilters.businessId.trim())
-      if (draftFilters.businessName.trim()) params.set('businessName', draftFilters.businessName.trim())
-    }
+    const params = buildQueryFromDraft()
     navigate(`/discover${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
@@ -253,10 +259,35 @@ export default function Discover() {
     setDraftFilters(prev => ({ ...prev, [key]: value }))
   }
 
+  const handleAttrsChange = (attrs: VenueAttrKey[]) => {
+    setDraftFilters(prev => ({ ...prev, attrs }))
+  }
+
+  const handleAttrsModeChange = (mode: 'any' | 'all') => {
+    setDraftFilters(prev => ({ ...prev, attrsMode: mode }))
+  }
+
   const applyFilters = () => {
-    const nextFilters = { ...draftFilters }
-    setFilters(nextFilters)
-    fetchEvents({ filtersOverride: nextFilters })
+    const params = buildQueryFromDraft()
+    navigate(`/discover${params.toString() ? `?${params.toString()}` : ''}`)
+  }
+
+  const buildQueryFromDraft = () => {
+    const params = new URLSearchParams()
+    if (searchInput.trim()) params.set('tag', searchInput.trim())
+    if (draftFilters.city.trim()) params.set('city', draftFilters.city.trim())
+    if (draftFilters.state.trim()) params.set('state', draftFilters.state.trim())
+    if (draftFilters.venue.trim()) params.set('venue', draftFilters.venue.trim())
+    if (draftFilters.host.trim()) params.set('host', draftFilters.host.trim())
+    if (draftFilters.businessId.trim()) {
+      params.set('businessId', draftFilters.businessId.trim())
+      if (draftFilters.businessName.trim()) params.set('businessName', draftFilters.businessName.trim())
+    }
+    if (draftFilters.attrs && draftFilters.attrs.length) {
+      params.set('attrs', draftFilters.attrs.join(','))
+      params.set('attrsMode', draftFilters.attrsMode || 'any')
+    }
+    return params
   }
 
   const navSearch = (
@@ -454,6 +485,14 @@ export default function Discover() {
                         onChange={(e) => handleFilterChange('radiusKm', e.target.value)}
                       />
                     </div>
+                    <VenueAttributeFilterPanel
+                      value={draftFilters.attrs}
+                      onChange={handleAttrsChange}
+                      mode={draftFilters.attrsMode}
+                      onModeChange={handleAttrsModeChange}
+                      onClear={() => handleAttrsChange([])}
+                      title="Amenities & Accessibility"
+                    />
                     <button className="btn btn-secondary" type="button" onClick={applyFilters}>Apply filters</button>
                   </div>
                 </div>

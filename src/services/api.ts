@@ -1,8 +1,25 @@
 // SEE.io API Client
 // Handles all API calls to SEE.API and internal endpoints
 
-const API_BASE_URL = (import.meta.env.VITE_SEE_API_URL || 'https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SEEAPI').replace(/\/$/, '')
-const SOCXAL_BASE_URL = (import.meta.env.VITE_SOCXAL_API_URL || 'https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SocxalAPI').replace(/\/$/, '')
+const sanitizeBaseUrl = (value: string, fallback: string) => {
+  try {
+    const url = new URL(value || fallback)
+    if (!/^https?:$/.test(url.protocol)) throw new Error('Invalid protocol')
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    const safe = new URL(fallback)
+    return safe.toString().replace(/\/$/, '')
+  }
+}
+
+const API_BASE_URL = sanitizeBaseUrl(
+  import.meta.env.VITE_SEE_API_URL || 'https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SEEAPI',
+  'https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SEEAPI'
+)
+const SOCXAL_BASE_URL = sanitizeBaseUrl(
+  import.meta.env.VITE_SOCXAL_API_URL || 'https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SocxalAPI',
+  'https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SocxalAPI'
+)
 
 export interface Event {
   id: string
@@ -34,6 +51,24 @@ export interface Event {
   businessName?: string | null
 }
 
+export interface Venue {
+  id: string
+  name: string
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  description?: string | null
+  phone?: string | null
+  websiteUrl?: string | null
+  instagramUrl?: string | null
+  imageUrl?: string | null
+  tags?: string[]
+  categories?: string[]
+  claimStatus?: string | null
+  claimedByBusinessId?: string | null
+  attributes?: string[]
+}
+
 export interface SearchParams {
   query?: string
   category?: string
@@ -54,6 +89,21 @@ export interface SearchParams {
   creatorType?: string
   sort?: string
   includePrivate?: boolean
+  attrsAny?: string[]
+  attrsAll?: string[]
+}
+
+export interface VenueSearchParams {
+  q?: string
+  city?: string
+  state?: string
+  lat?: number
+  lon?: number
+  radiusKm?: number
+  category?: string
+  take?: number
+  attrsAny?: string[]
+  attrsAll?: string[]
 }
 
 export interface SearchResponse {
@@ -93,6 +143,56 @@ const normalizeSearchResponse = (data: any): SearchResponse => {
   return { items, totalCount, hasMore, nextPageToken: data.nextPageToken || null }
 }
 
+const normalizeVenue = (item: any): Venue => {
+  const tagsSource = item?.tags || item?.Tags
+  const categoriesSource = item?.categories || item?.Categories
+  const tags = Array.isArray(tagsSource)
+    ? tagsSource
+    : typeof tagsSource === 'string'
+      ? tagsSource.split(',').map((tag: string) => tag.trim()).filter(Boolean)
+      : undefined
+  const categories = Array.isArray(categoriesSource)
+    ? categoriesSource
+    : typeof categoriesSource === 'string'
+      ? categoriesSource.split(',').map((tag: string) => tag.trim()).filter(Boolean)
+      : undefined
+  const attributesSource = item?.attributes || item?.Attributes
+  const attributes = Array.isArray(attributesSource)
+    ? attributesSource.map((v: any) => (v || '').toString()).filter(Boolean)
+    : typeof attributesSource === 'string'
+      ? attributesSource.split(',').map((v: string) => v.trim()).filter(Boolean)
+      : undefined
+
+  return {
+    id: (item?.id ?? item?.venueId ?? item?.Id ?? '').toString(),
+    name: item?.name || item?.Name || 'Venue',
+    address: item?.address || item?.Address || null,
+    city: item?.city || item?.City || null,
+    state: item?.state || item?.State || null,
+    description: item?.description || item?.Description || null,
+    phone: item?.phone || item?.Phone || null,
+    websiteUrl: item?.websiteUrl || item?.WebsiteUrl || item?.website || null,
+    instagramUrl: item?.instagramUrl || item?.InstagramUrl || item?.instagram || null,
+    imageUrl: item?.imageUrl || item?.ImageUrl || item?.coverImage || item?.CoverImage || null,
+    tags,
+    categories,
+    attributes,
+    claimStatus: item?.claimStatus || item?.ClaimStatus || null,
+    claimedByBusinessId: item?.claimedByBusinessId || item?.ClaimedByBusinessId || null
+  }
+}
+
+const normalizeVenuesResponse = (data: any): Venue[] => {
+  const items = Array.isArray(data?.items)
+    ? data.items
+    : Array.isArray((data as any)?.Items)
+      ? (data as any).Items
+      : Array.isArray(data)
+        ? data
+        : []
+  return items.map(normalizeVenue)
+}
+
 // Direct SEE.API calls (when server is not available)
 export const seeApi = {
   async searchEvents(params: SearchParams = {}): Promise<SearchResponse> {
@@ -120,6 +220,8 @@ export const seeApi = {
     if (params.pageToken) queryParams.set('pageToken', params.pageToken)
     if (typeof params.enableDiscovery === 'boolean') queryParams.set('enableDiscovery', String(params.enableDiscovery))
     if (typeof params.forceDiscover === 'boolean') queryParams.set('forceDiscover', String(params.forceDiscover))
+    if (params.attrsAny && params.attrsAny.length) queryParams.set('attrsAny', params.attrsAny.join(','))
+    if (params.attrsAll && params.attrsAll.length) queryParams.set('attrsAll', params.attrsAll.join(','))
 
     const response = await fetch(`${API_BASE_URL}/v1/events?${queryParams}`)
     if (!response.ok) throw new Error('Failed to search events (SEE.API)')
@@ -584,33 +686,48 @@ export const api = {
   },
 
   async requestBusinessUpgrade(userId: string, idToken: string, payload: CreateBusinessPayload) {
-    const resp = await fetch(`${API_BASE_URL}/v1/users/${encodeURIComponent(userId)}/publisher`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: payload.name,
-        slug: payload.slug || null,
-        type: payload.type || null,
-        description: payload.description || null,
-        logoUrl: payload.logoUrl || null,
-        coverPhotoUrl: payload.coverPhotoUrl || null,
-        website: payload.website || null,
-        contactEmail: payload.contactEmail || null,
-        contactPhone: payload.contactPhone || null,
-        address: payload.address || null,
-        city: payload.city || null,
-        state: payload.state || null,
-        country: payload.country || null
-      })
-    })
-    if (!resp.ok) {
-      const errText = await resp.text()
-      throw new Error(errText || 'Unable to upgrade this account to business')
+    const body = {
+      // Newer ConvertUserToBusinessRequest fields
+      businessName: payload.name,
+      website: payload.website || null,
+      category: payload.type || null,
+      city: payload.city || null,
+      state: payload.state || null,
+      bio: payload.description || null,
+      // Legacy/CreateBusiness fields to maximize compatibility
+      name: payload.name,
+      slug: payload.slug || null,
+      type: payload.type || null,
+      description: payload.description || null,
+      logoUrl: payload.logoUrl || null,
+      coverPhotoUrl: payload.coverPhotoUrl || null,
+      contactEmail: payload.contactEmail || null,
+      contactPhone: payload.contactPhone || null,
+      address: payload.address || null,
+      country: payload.country || null
     }
-    return resp.json().catch(() => ({}))
+    const target = `${API_BASE_URL}/v1/users/${encodeURIComponent(userId)}/publisher`
+    const fallback = `${API_BASE_URL}/v1/users/${encodeURIComponent(userId)}/convert-to-business`
+    const send = async (url: string) => {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      })
+      if (!resp.ok) {
+        const errText = await resp.text()
+        throw new Error(errText || 'Unable to upgrade this account to business')
+      }
+      return resp.json().catch(() => ({}))
+    }
+    try {
+      return await send(target)
+    } catch (err) {
+      return send(fallback)
+    }
   },
 
   async fetchUserSaved(userId: string, idToken: string) {
@@ -965,6 +1082,17 @@ export const api = {
       headers: { Authorization: `Bearer ${idToken}` }
     })
     if (!resp.ok) throw new Error('Failed to load media')
+    return resp.json()
+  },
+
+  async fetchEventImages(eventId: string, idToken: string, params?: { purpose?: string; businessId?: string | null }) {
+    const query = new URLSearchParams()
+    if (params?.purpose) query.set('purpose', params.purpose)
+    const suffix = query.toString() ? `?${query}` : ''
+    const resp = await fetch(`${API_BASE_URL}/v1/publisher/events/${encodeURIComponent(eventId)}/images${suffix}`, {
+      headers: { Authorization: `Bearer ${idToken}` }
+    })
+    if (!resp.ok) throw new Error('Failed to load event images')
     return resp.json()
   },
 
@@ -1330,6 +1458,127 @@ export const api = {
     return resp.json()
   },
 
+  async searchVenues(params: VenueSearchParams = {}) {
+    const query = new URLSearchParams()
+    if (params.q) query.set('q', params.q)
+    if (params.city) query.set('city', params.city)
+    if (params.state) query.set('state', params.state)
+    if (typeof params.lat === 'number') query.set('lat', params.lat.toString())
+    if (typeof params.lon === 'number') query.set('lon', params.lon.toString())
+    if (typeof params.radiusKm === 'number') query.set('radiusKm', params.radiusKm.toString())
+    if (params.category) query.set('category', params.category)
+    if (params.take) query.set('take', params.take.toString())
+    if (params.attrsAny && params.attrsAny.length) query.set('attrsAny', params.attrsAny.join(','))
+    if (params.attrsAll && params.attrsAll.length) query.set('attrsAll', params.attrsAll.join(','))
+    const suffix = query.toString() ? `?${query.toString()}` : ''
+    const resp = await fetch(`${API_BASE_URL}/v1/venues${suffix}`)
+    if (!resp.ok) throw new Error('Failed to search venues')
+    const data = await resp.json()
+    return { items: normalizeVenuesResponse(data), raw: data }
+  },
+
+  async fetchVenue(id: string): Promise<Venue> {
+    const resp = await fetch(`${API_BASE_URL}/v1/venues/${encodeURIComponent(id)}`)
+    if (!resp.ok) throw new Error('Failed to load venue')
+    const data = await resp.json()
+    return normalizeVenue(data)
+  },
+
+  async fetchVenueEvents(venueId: string, params?: { fromUtc?: string; toUtc?: string; take?: number }) {
+    const query = new URLSearchParams()
+    if (params?.fromUtc) query.set('fromUtc', params.fromUtc)
+    if (params?.toUtc) query.set('toUtc', params.toUtc)
+    if (params?.take) query.set('take', params.take.toString())
+    const suffix = query.toString() ? `?${query}` : ''
+    const resp = await fetch(`${API_BASE_URL}/v1/venues/${encodeURIComponent(venueId)}/events${suffix}`)
+    if (!resp.ok) throw new Error('Failed to load venue events')
+    const data = await resp.json()
+    const list = Array.isArray((data as any)?.items) ? (data as any).items : Array.isArray(data) ? data : []
+    return list.map(formatEventForDisplay)
+  },
+
+  async recordVenueInteraction(venueId: string, payload: { type: string; sessionId?: string | null; metadata?: any }) {
+    const resp = await fetch(`${API_BASE_URL}/v1/venues/${encodeURIComponent(venueId)}/interactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {})
+    })
+    if (!resp.ok) throw new Error('Failed to record venue interaction')
+    return resp.json().catch(() => ({}))
+  },
+
+  async submitVenueClaim(venueId: string, payload: { businessId: string; proofType: string; proofValue: string }, idToken: string) {
+    const resp = await fetch(`${API_BASE_URL}/v1/venues/${encodeURIComponent(venueId)}/claim`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+    if (!resp.ok) {
+      const text = await resp.text()
+      throw new Error(text || 'Unable to submit claim')
+    }
+    return resp.json().catch(() => ({}))
+  },
+
+  async updateVenue(venueId: string, payload: Partial<Venue>, idToken: string) {
+    const resp = await fetch(`${API_BASE_URL}/v1/venues/${encodeURIComponent(venueId)}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+    if (resp.status === 403) {
+      throw new Error('You do not have permission to edit this venue.')
+    }
+    if (!resp.ok) {
+      const text = await resp.text()
+      throw new Error(text || 'Failed to update venue')
+    }
+    const data = await resp.json().catch(() => ({}))
+    return normalizeVenue(data)
+  },
+
+  async fetchOrCreateHostPaymentAccount(hostId: string, idToken: string) {
+    const url = `${API_BASE_URL}/v1/hosts/${encodeURIComponent(hostId)}/payments/account`
+    const headers = { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' }
+    try {
+      const resp = await fetch(url, { headers })
+      if (resp.ok) return resp.json()
+      if (resp.status === 404 || resp.status === 405) {
+        // fall through to creation
+      } else {
+        const text = await resp.text()
+        throw new Error(text || 'Unable to load payments profile')
+      }
+    } catch {
+      // fall through
+    }
+    const createResp = await fetch(url, { method: 'POST', headers, body: JSON.stringify({}) })
+    if (!createResp.ok) {
+      const text = await createResp.text()
+      throw new Error(text || 'Unable to create payments profile')
+    }
+    return createResp.json()
+  },
+
+  async createHostOnboardingLink(hostId: string, idToken: string) {
+    const resp = await fetch(`${API_BASE_URL}/v1/hosts/${encodeURIComponent(hostId)}/payments/onboarding-link`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    if (!resp.ok) {
+      const text = await resp.text()
+      throw new Error(text || 'Unable to start Stripe onboarding')
+    }
+    return resp.json()
+  },
+
   async fetchCategories() {
     const resp = await fetch(`${API_BASE_URL}/v1/categories`)
     if (!resp.ok) throw new Error('Failed to fetch categories')
@@ -1364,6 +1613,84 @@ export const api = {
     return resp.json()
   },
 
+  async fetchBusinessOverviewMetrics(idToken: string, params: { fromUtc: string; toUtc: string; businessId?: string | null }) {
+    const query = new URLSearchParams({ fromUtc: params.fromUtc, toUtc: params.toUtc })
+    const target = `${API_BASE_URL}/v1/business/metrics/overview?${query.toString()}`
+    const fallback = params.businessId
+      ? `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/overview?${query.toString()}`
+      : null
+    const resp = await fetch(target, { headers: { Authorization: `Bearer ${idToken}` } })
+    if (resp.status === 401 || resp.status === 403) throw new Error('You do not have access to analytics.')
+    if (resp.ok) return resp.json()
+    if (fallback) {
+      const alt = await fetch(fallback, { headers: { Authorization: `Bearer ${idToken}` } })
+      if (alt.status === 401 || alt.status === 403) throw new Error('You do not have access to analytics.')
+      if (!alt.ok) throw new Error('Failed to load analytics overview')
+      return alt.json()
+    }
+    throw new Error('Failed to load analytics overview')
+  },
+
+  async fetchBusinessEventMetrics(idToken: string, params: { fromUtc: string; toUtc: string; sort?: string; take?: number; businessId?: string | null }) {
+    const query = new URLSearchParams({ fromUtc: params.fromUtc, toUtc: params.toUtc })
+    if (params.sort) query.set('sort', params.sort)
+    if (params.take) query.set('take', params.take.toString())
+    const target = `${API_BASE_URL}/v1/business/metrics/events?${query.toString()}`
+    const fallback = params.businessId
+      ? `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/events?${query.toString()}`
+      : null
+    const resp = await fetch(target, { headers: { Authorization: `Bearer ${idToken}` } })
+    if (resp.status === 401 || resp.status === 403) throw new Error('You do not have access to analytics.')
+    if (resp.ok) return resp.json()
+    if (fallback) {
+      const alt = await fetch(fallback, { headers: { Authorization: `Bearer ${idToken}` } })
+      if (alt.status === 401 || alt.status === 403) throw new Error('You do not have access to analytics.')
+      if (!alt.ok) throw new Error('Failed to load event analytics')
+      return alt.json()
+    }
+    throw new Error('Failed to load event analytics')
+  },
+
+  async fetchBusinessVenueMetrics(idToken: string, params: { fromUtc: string; toUtc: string; sort?: string; take?: number; businessId?: string | null }) {
+    const query = new URLSearchParams({ fromUtc: params.fromUtc, toUtc: params.toUtc })
+    if (params.sort) query.set('sort', params.sort)
+    if (params.take) query.set('take', params.take.toString())
+    const target = `${API_BASE_URL}/v1/business/metrics/venues?${query.toString()}`
+    const fallback = params.businessId
+      ? `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/venues?${query.toString()}`
+      : null
+    const resp = await fetch(target, { headers: { Authorization: `Bearer ${idToken}` } })
+    if (resp.status === 401 || resp.status === 403) throw new Error('You do not have access to analytics.')
+    if (resp.ok) return resp.json()
+    if (fallback) {
+      const alt = await fetch(fallback, { headers: { Authorization: `Bearer ${idToken}` } })
+      if (alt.status === 401 || alt.status === 403) throw new Error('You do not have access to analytics.')
+      if (!alt.ok) throw new Error('Failed to load venue analytics')
+      return alt.json()
+    }
+    throw new Error('Failed to load venue analytics')
+  },
+
+  async fetchEventMetrics(eventId: string, idToken: string, params: { fromUtc: string; toUtc: string }) {
+    const query = new URLSearchParams({ fromUtc: params.fromUtc, toUtc: params.toUtc })
+    const resp = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/metrics?${query.toString()}`, {
+      headers: { Authorization: `Bearer ${idToken}` }
+    })
+    if (resp.status === 401 || resp.status === 403) throw new Error('You do not have access to analytics.')
+    if (!resp.ok) throw new Error('Failed to load event analytics')
+    return resp.json()
+  },
+
+  async fetchVenueMetrics(venueId: string, idToken: string, params: { fromUtc: string; toUtc: string }) {
+    const query = new URLSearchParams({ fromUtc: params.fromUtc, toUtc: params.toUtc })
+    const resp = await fetch(`${API_BASE_URL}/v1/venues/${encodeURIComponent(venueId)}/metrics?${query.toString()}`, {
+      headers: { Authorization: `Bearer ${idToken}` }
+    })
+    if (resp.status === 401 || resp.status === 403) throw new Error('You do not have access to analytics.')
+    if (!resp.ok) throw new Error('Failed to load venue analytics')
+    return resp.json()
+  },
+
   async fetchEventTickets(eventId: string): Promise<TicketType[]> {
     const resp = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/tickets`)
     if (!resp.ok) throw new Error('Failed to load tickets')
@@ -1387,6 +1714,17 @@ export const api = {
       salesStartUtc: t.salesStartUtc || t.SalesStartUtc || t.salesStart || null,
       salesEndUtc: t.salesEndUtc || t.SalesEndUtc || t.salesEnd || null
     }))
+  },
+
+  async fetchMyEventTickets(eventId: string, idToken: string): Promise<any[]> {
+    const resp = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/tickets/my`, {
+      headers: { Authorization: `Bearer ${idToken}` }
+    })
+    if (resp.status === 401) throw new Error('Sign in to view your tickets.')
+    if (!resp.ok) throw new Error('Failed to load your tickets')
+    const data = await resp.json()
+    const list = Array.isArray((data as any)?.items) ? (data as any).items : Array.isArray(data) ? data : []
+    return list
   },
 
   async purchaseTicket(eventId: string, ticketId: string, quantity: number, idToken: string) {
@@ -1478,19 +1816,28 @@ export const api = {
   },
 
   async refundTicket(eventId: string, ticketId: string, payload: RefundRequestPayload, idToken: string) {
-    const resp = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/tickets/${encodeURIComponent(ticketId)}/refund`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload || {})
-    })
-    if (!resp.ok) {
-      const text = await resp.text()
-      throw new Error(text || 'Failed to refund ticket')
+    const attempt = async (url: string) => {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload || {})
+      })
+      if (!resp.ok) {
+        const text = await resp.text()
+        throw new Error(text || 'Failed to refund ticket')
+      }
+      return resp.json()
     }
-    return resp.json()
+    const primary = `${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/tickets/${encodeURIComponent(ticketId)}/refund`
+    const fallback = `${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/purchases/${encodeURIComponent(ticketId)}/refund`
+    try {
+      return await attempt(primary)
+    } catch (err) {
+      return attempt(fallback)
+    }
   },
 
   async verifyTicketToken(eventId: string, token: string, checkIn: boolean, idToken: string) {
@@ -1503,6 +1850,23 @@ export const api = {
       body: JSON.stringify({ token, checkIn })
     })
     if (!resp.ok) throw new Error('Failed to verify ticket')
+    return resp.json()
+  },
+
+  async validateTicketToken(payload: { token: string; eventId?: string | null; venueId?: string | null; deviceId?: string | null }, idToken: string) {
+    const resp = await fetch(`${API_BASE_URL}/v1/tickets/validate`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+    if (resp.status === 403) throw new Error('You do not have permission to scan this ticket.')
+    if (!resp.ok) {
+      const text = await resp.text()
+      throw new Error(text || 'Failed to validate ticket')
+    }
     return resp.json()
   },
 

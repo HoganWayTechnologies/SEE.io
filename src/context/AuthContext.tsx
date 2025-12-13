@@ -20,7 +20,7 @@ type AuthContextValue = {
   businessContextReady: boolean
   sessionId: string | null
   signIn: (profile: any, idToken: string, tokens?: { socxalToken?: string; refreshToken?: string | null }) => void
-  signOut: () => void
+  signOut: (redirectTo?: string | null) => void
   refreshBusinessMemberships: () => Promise<void>
 }
 
@@ -102,11 +102,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const load = async () => {
     try {
       const storedProfile = window.localStorage.getItem('seeProfile')
-      const storedIdToken = window.localStorage.getItem('seeIdToken')
-      const storedSocxalToken = window.localStorage.getItem('seeSocxalAccessToken')
+      const storedIdToken = window.sessionStorage.getItem('seeIdToken') || window.localStorage.getItem('seeIdToken')
+      const storedSocxalToken = window.sessionStorage.getItem('seeSocxalAccessToken') || window.localStorage.getItem('seeSocxalAccessToken')
       const storedPrimaryBusinessId = window.localStorage.getItem('seePrimaryBusinessId')
       const storedBusinessMemberships = window.localStorage.getItem('seeBusinessMemberships')
-      const storedSessionId = window.localStorage.getItem('seeSessionId')
+      const storedSessionId = window.sessionStorage.getItem('seeSessionId') || window.localStorage.getItem('seeSessionId')
       if (storedProfile) setProfile(JSON.parse(storedProfile))
       if (storedIdToken) setIdToken(storedIdToken)
       if (storedSocxalToken) setSocxalToken(storedSocxalToken)
@@ -259,11 +259,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPrimaryBusinessId(derivedPrimary)
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('seeProfile', JSON.stringify(nextProfile || null))
-      window.localStorage.setItem('seeIdToken', nextIdToken || '')
+      window.localStorage.removeItem('seeIdToken')
+      window.localStorage.removeItem('seeSocxalAccessToken')
+      window.sessionStorage.setItem('seeIdToken', nextIdToken || '')
       if (tokens?.socxalToken) {
-        window.localStorage.setItem('seeSocxalAccessToken', tokens.socxalToken)
+        window.sessionStorage.setItem('seeSocxalAccessToken', tokens.socxalToken)
       } else {
-        window.localStorage.removeItem('seeSocxalAccessToken')
+        window.sessionStorage.removeItem('seeSocxalAccessToken')
       }
       if (derivedPrimary) {
         window.localStorage.setItem('seePrimaryBusinessId', derivedPrimary)
@@ -284,7 +286,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback((redirectTo: string | null = '/') => {
     if (idToken) {
       seeLogout(sessionId, idToken)
     }
@@ -304,6 +306,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.localStorage.removeItem('seeProfile')
       window.localStorage.removeItem('seeIdToken')
       window.localStorage.removeItem('seeSocxalAccessToken')
+      window.sessionStorage.removeItem('seeIdToken')
+      window.sessionStorage.removeItem('seeSocxalAccessToken')
       window.localStorage.removeItem('seePrimaryBusinessId')
       window.localStorage.removeItem('seeBusinessMemberships')
       window.localStorage.removeItem('seeSessionId')
@@ -313,10 +317,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     persistBusinessMemberships([])
     setIsReady(true)
     unauthorizedSignOutRef.current = false
-    if (typeof window !== 'undefined') {
-      // Ensure the user lands on home after logout
+    if (typeof window !== 'undefined' && redirectTo) {
       window.setTimeout(() => {
-        window.location.assign('/')
+        window.location.assign(redirectTo)
       }, 0)
     }
   }, [persistRefreshToken, persistBusinessMemberships])
@@ -387,11 +390,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [idToken, refreshToken, refreshSession])
 
   const handleUnauthorized = useCallback(() => {
+    // If there is no active auth session, ignore 401s (public calls can return 401)
+    if (!idToken) return
     if (unauthorizedSignOutRef.current) return
     unauthorizedSignOutRef.current = true
     console.warn('SEE.io session expired or became unauthorized. Signing out.')
-    signOut()
-  }, [signOut])
+    const next = typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname + window.location.search) : ''
+    signOut(`/auth?next=${next}`)
+  }, [idToken, signOut])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -399,17 +405,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       originalFetchRef.current = window.fetch.bind(window)
     }
     const baseFetch = originalFetchRef.current
+    const getCsrfToken = () => {
+      if (typeof document === 'undefined') return null
+      const match = document.cookie.match(/(?:^|; )see_csrf=([^;]*)/)
+      if (match && match[1]) return decodeURIComponent(match[1])
+      const alt = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
+      if (alt && alt[1]) return decodeURIComponent(alt[1])
+      return null
+    }
     const patchedFetch: typeof window.fetch = async (...args) => {
-      const response = await baseFetch(...args)
+      let request: Request
+      let url = ''
+      try {
+        request = new Request(args[0] as RequestInfo, args[1] as RequestInit)
+        url = request.url
+      } catch {
+        request = undefined as any
+        if (typeof args[0] === 'string') url = args[0]
+      }
+      const csrfToken = getCsrfToken()
+      if (request && csrfToken) {
+        const method = (request.method || 'GET').toUpperCase()
+        if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+          const headers = new Headers(request.headers)
+          if (!headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', csrfToken)
+          request = new Request(request, { headers })
+        }
+      }
+      const response = request ? await baseFetch(request) : await baseFetch(...(args as any))
       const sessionHeader = response.headers.get('x-session-id') || response.headers.get('X-Session-Id')
       if (sessionHeader) {
         setSessionId(sessionHeader)
         if (typeof window !== 'undefined') {
-          window.localStorage.setItem('seeSessionId', sessionHeader)
+          window.sessionStorage.setItem('seeSessionId', sessionHeader)
         }
       }
       if (response.status === 401) {
-        handleUnauthorized()
+        const hasAuthHeader =
+          request &&
+          (request.headers.get('Authorization') || request.headers.get('authorization'))
+        if (idToken && hasAuthHeader) {
+          handleUnauthorized()
+        }
+      } else if (response.status === 403) {
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/403')) {
+          window.sessionStorage.setItem('see_forbidden_path', window.location.pathname + window.location.search)
+          window.location.assign('/403')
+        }
       }
       return response
     }

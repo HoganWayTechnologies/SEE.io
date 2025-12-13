@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { isAdmin, isBusiness } from '../utils/roles'
 
 export default function UserMenu() {
   const auth = useAuth()
@@ -29,12 +30,19 @@ export default function UserMenu() {
           <Link to="/tickets" className="user-menu-item">My Tickets</Link>
           <Link to="/calendar" className="user-menu-item">Calendar</Link>
           <Link to="/inbox" className="user-menu-item">Inbox</Link>
-          <Link to="/my-events" className="user-menu-item">My Events</Link>
+          {isBusiness(auth.profile, auth.primaryBusinessId, auth.businessMemberships) && (
+            <>
+              <Link to="/my-events" className="user-menu-item">My Events</Link>
+              <Link to="/host/analytics" className="user-menu-item">Host Analytics</Link>
+            </>
+          )}
           <Link to="/profile" className="user-menu-item">Profile</Link>
           <Link to="/settings" className="user-menu-item">Settings</Link>
           <Link to="/preferences" className="user-menu-item">Preferences</Link>
-          <Link to="/publisher" className="user-menu-item">Publisher Console</Link>
-          <Link to="/reports" className="user-menu-item">Reports</Link>
+          {isBusiness(auth.profile, auth.primaryBusinessId, auth.businessMemberships) && (
+            <Link to="/publisher" className="user-menu-item">Publisher Console</Link>
+          )}
+          {isAdmin(auth.profile) && <Link to="/reports" className="user-menu-item">Admin</Link>}
           <button className="user-menu-item" type="button" onClick={() => auth.signOut()}>Sign out</button>
         </div>
       )}

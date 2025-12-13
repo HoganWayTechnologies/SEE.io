@@ -44,6 +44,9 @@
       "email": "user@example.com",
       "redirectUrl": "https://app.see.events/auth/magic"
     },
+    "LogoutRequest": {
+      "sessionId": "session_abc123"
+    },
     "MagicLinkConsumeRequest": {
       "token": "ml_1234567890"
     },
@@ -98,7 +101,17 @@
         "dj"
       ],
       "admissionType": "see_ticketed",
-      "externalTicketUrl": null
+      "externalTicketUrl": null,
+      "intensity": "medium",
+      "socialness": "small_group",
+      "locationType": "indoor",
+      "priceBand": "medium",
+      "minTicketPrice": 25,
+      "maxTicketPrice": 75,
+      "audienceType": "adult",
+      "accessibilityTags": [
+        "wheelchair_access"
+      ]
     },
     "UpdateEventRequest": {
       "title": "Rooftop Sessions",
@@ -119,6 +132,16 @@
       ],
       "admissionType": "see_ticketed",
       "externalTicketUrl": null,
+      "intensity": "high",
+      "socialness": "large_crowd",
+      "locationType": "indoor",
+      "priceBand": "high",
+      "minTicketPrice": 50,
+      "maxTicketPrice": 150,
+      "audienceType": "adult",
+      "accessibilityTags": [
+        "wheelchair_access"
+      ],
       "verified": true
     },
     "EventPromotionRequest": {
@@ -451,6 +474,33 @@
       "notes": "Contacted organizer",
       "actor": "moderator_uid",
       "timestampUtc": "2025-05-01T12:34:00Z"
+    },
+    "ValidateTicketRequest": {
+      "token": "encrypted_or_qr_token",
+      "eventId": "evt_123",
+      "venueId": "ven_123",
+      "deviceId": "scanner_device_01"
+    },
+    "SubmitVenueClaimRequest": {
+      "businessId": "biz_123",
+      "proofType": "manual",
+      "proofValue": "link_or_note"
+    },
+    "VenueInteractionRequest": {
+      "type": "view",
+      "sessionId": "session_abc123"
     }
+  },
+  "endpoints": {
+    "POST /v1/events/{eventId}/interactions": "EventInteractionRequest",
+    "POST /v1/venues/{venueId}/interactions": "VenueInteractionRequest",
+    "POST /v1/events/{eventId}/tickets/{ticketId}/checkout/stripe": "PurchaseTicketsRequest",
+    "POST /v1/events/{eventId}/purchases/{purchaseId}/refund": "RefundTicketRequest",
+    "POST /v1/tickets/validate": "ValidateTicketRequest",
+    "POST /v1/users/{userId}/convert-to-business": "ConvertUserToBusinessRequest",
+    "POST /v1/venues/{venueId}/claim": "SubmitVenueClaimRequest",
+    "POST /v1/publisher/events": "CreateEventRequest",
+    "PUT /v1/publisher/events/{eventId}": "UpdateEventRequest",
+    "PUT /v1/events/{eventId}/rsvp": "RsvpRequest"
   }
 }

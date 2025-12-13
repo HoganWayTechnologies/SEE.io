@@ -585,7 +585,6 @@ export default function MyEventsPage() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                          <Link to={`/publisher/events/${evt.id || evt.eventId || ''}`} className="nav-link">Manage</Link>
                           <a
                             className="nav-link"
                             href={`/event/${evt.id || evt.eventId || ''}`}
@@ -594,19 +593,22 @@ export default function MyEventsPage() {
                           >
                             View page
                           </a>
-                          <button className="btn btn-secondary" onClick={() => publishEvent(evt.id || evt.eventId || '')}>Publish</button>
-                          <button className="btn btn-secondary" onClick={() => cancelEvent(evt.id || evt.eventId || '')}>Cancel</button>
+                          {!(evt.status || '').toLowerCase().includes('canceled') && !(evt.status || '').toLowerCase().includes('rejected') && (
+                            <>
+                              <Link to={`/publisher/events/${evt.id || evt.eventId || ''}`} className="nav-link">Manage</Link>
+                              <button className="btn btn-secondary" onClick={() => publishEvent(evt.id || evt.eventId || '')}>Publish</button>
+                              <button className="btn btn-secondary" onClick={() => cancelEvent(evt.id || evt.eventId || '')}>Cancel</button>
+                              <Link to={`/publisher/events/${evt.id || evt.eventId || ''}/page`} className="btn btn-secondary">
+                                Page builder
+                              </Link>
+                            </>
+                          )}
                         </div>
                         {actionStatus[evt.id || evt.eventId || ''] && (
                           <div style={{ fontSize: '0.85rem', color: 'var(--gray-600)' }}>
                             {actionStatus[evt.id || evt.eventId || '']}
                           </div>
                         )}
-                      </td>
-                      <td>
-                        <Link to={`/publisher/events/${evt.id || evt.eventId || ''}/page`} className="btn btn-secondary">
-                          Page builder
-                        </Link>
                       </td>
                       <td>
                         {ticketView[`discounts-${evt.id || evt.eventId || ''}`] ? (

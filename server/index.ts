@@ -17,6 +17,30 @@ try {
 
   const API_BASE = (process.env.NEXT_PUBLIC_SEE_API_URL || 'https://socxalapi-prod-e3btc0b3h8bccsgv.eastus2-01.azurewebsites.net/SEEAPI').replace(/\/$/, '')
 
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' https: data:",
+    `connect-src 'self' ${API_BASE} https: wss:`,
+    "font-src 'self' https: data:",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "base-uri 'self'"
+  ].join('; ')
+
+  app.use((_, res, next) => {
+    res.setHeader('Content-Security-Policy-Report-Only', csp)
+    res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    res.setHeader('X-Frame-Options', 'DENY')
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin')
+    next()
+  })
+
   console.log('API_BASE:', API_BASE)
 
   // Helper to init admin only when needed
