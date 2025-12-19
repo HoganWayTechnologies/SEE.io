@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import QRCode from 'qrcode'
 import { useAuth } from '../context/AuthContext'
 import { api, getUserIdFromProfile } from '../services/api'
 import SiteNav from '../components/SiteNav'
@@ -33,6 +34,20 @@ export default function TicketsPage() {
   const [transferStatus, setTransferStatus] = useState<{ [key: string]: string | null }>({})
   const [refundStatus, setRefundStatus] = useState<{ [key: string]: string | null }>({})
 
+  const toQrDataUrl = async (code: Ticket['barcode']): Promise<Ticket['barcode'] | null> => {
+    if (!code) return null
+    const payload = (code as any)?.payload || code
+    if (typeof payload !== 'string') return code
+    if (payload.startsWith('data:image')) return { ...code, payload }
+    try {
+      const dataUrl = await QRCode.toDataURL(payload, { margin: 1, width: 360 })
+      return { type: (code as any)?.type || 'QR', payload: dataUrl }
+    } catch (err) {
+      console.warn('Failed to render QR', err)
+      return code
+    }
+  }
+
   const loadTickets = React.useCallback(async () => {
     const userId = getUserIdFromProfile(auth.profile)
     if (!auth.idToken || !userId) {
@@ -42,17 +57,43 @@ export default function TicketsPage() {
     }
     try {
       const resp = await api.fetchUserTickets(userId, auth.idToken)
-      const normalized = Array.isArray(resp) ? resp : (resp?.items || [])
-      setTickets(normalized.length ? normalized.map(t => ({
-        id: t.id,
-        eventId: t.eventId,
-        eventTitle: t.eventTitle || t.name || 'Event',
-        eventDate: t.eventDate,
-        venue: t.venue,
-        status: (t.status as any) || 'active',
-        barcode: t.barcode || (t.qrCode ? { type: 'QR', payload: t.qrCode } : undefined),
-        claimCode: (t as any).claimCode
-      })) : [])
+      const list = Array.isArray(resp)
+        ? resp
+        : Array.isArray((resp as any)?.items)
+          ? (resp as any).items
+          : Array.isArray((resp as any)?.Items)
+            ? (resp as any).Items
+            : []
+      const normalized = list.map((t: any) => {
+        const rawDate = t.eventDate || t.EventDate || t.eventStartUtc || t.EventStartUtc || null
+        const parsedDate = rawDate ? new Date(rawDate) : null
+        const displayDate = parsedDate && !isNaN(parsedDate.getTime())
+          ? parsedDate.toLocaleString()
+          : rawDate || 'Upcoming'
+        const statusRaw = (t.status || t.Status || 'active')?.toString().toLowerCase()
+        const status: Ticket['status'] =
+          statusRaw === 'purchased' ? 'active' :
+          (statusRaw === 'used' || statusRaw === 'redeemed') ? 'used' :
+          (statusRaw === 'refunded' || statusRaw === 'cancelled' || statusRaw === 'canceled') ? 'refunded' :
+          'active'
+        const qr = t.barcode || t.Barcode || t.qrCode || t.QrCode
+        const barcode = qr
+          ? (typeof qr === 'string'
+            ? { type: 'QR', payload: qr }
+            : qr)
+          : undefined
+        return {
+          id: t.id || t.Id,
+          eventId: t.eventId || t.EventId,
+          eventTitle: t.eventTitle || t.EventTitle || t.name || t.Name || 'Event',
+          eventDate: displayDate,
+          venue: t.venue || t.Venue || '',
+          status,
+          barcode,
+          claimCode: t.claimCode || t.ClaimCode || null
+        } as Ticket
+      })
+      setTickets(normalized.length ? normalized : [])
       setStatus(normalized.length ? null : 'No tickets found.')
     } catch (err: any) {
       setTickets(mockTickets)
@@ -103,9 +144,26 @@ export default function TicketsPage() {
           <p style={{ color: 'var(--gray-600)' }}>Access your tickets, QR codes, and purchase history.</p>
         </header>
         {status && <p style={{ color: 'var(--gray-600)' }}>{status}</p>}
-        <div className="grid grid-cols-3" style={{ gap: '1rem' }}>
+        <div
+          className="grid grid-cols-3"
+          style={{
+            gap: '1rem',
+            display: 'flex',
+            overflowX: 'auto',
+            paddingBottom: '0.5rem',
+            scrollSnapType: 'x mandatory'
+          }}
+        >
           {tickets.map(ticket => (
-            <div className="card" key={ticket.id}>
+            <div
+              className="card"
+              key={ticket.id}
+              style={{
+                minWidth: '280px',
+                scrollSnapAlign: 'start',
+                boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)'
+              }}
+            >
               <div className="card-body">
                 <h3 className="card-title">{ticket.eventTitle}</h3>
                 <p style={{ margin: 0, color: 'var(--gray-600)' }}>{ticket.eventDate}</p>
@@ -161,22 +219,37 @@ export default function TicketsPage() {
                       setCodeStatus(prev => ({ ...prev, [ticket.id]: 'Sign in to view code.' }))
                       return
                     }
+                    if (activeTicketCode[ticket.id]) {
+                      setActiveTicketCode(prev => ({ ...prev, [ticket.id]: null }))
+                      setCodeStatus(prev => ({ ...prev, [ticket.id]: null }))
+                      return
+                    }
                     setCodeStatus(prev => ({ ...prev, [ticket.id]: 'Fetching code…' }))
                     try {
                       const code = ticket.barcode || await api.fetchTicketBarcode(ticket.eventId, ticket.id, auth.idToken)
-                      setActiveTicketCode(prev => ({ ...prev, [ticket.id]: code }))
+                      const rendered = await toQrDataUrl(code as any)
+                      setActiveTicketCode(prev => ({ ...prev, [ticket.id]: rendered }))
                       setCodeStatus(prev => ({ ...prev, [ticket.id]: code?.expiresAt ? `Expires ${code.expiresAt}` : null }))
                     } catch (err: any) {
                       setCodeStatus(prev => ({ ...prev, [ticket.id]: err?.message || 'Unable to load code' }))
                     }
                   }}
                 >
-                  View Ticket
+                  {activeTicketCode[ticket.id] ? 'Hide Ticket' : 'View Ticket'}
                 </button>
                 {activeTicketCode[ticket.id] && (
-                  <div style={{ marginTop: '0.75rem' }}>
+                  <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
                     {activeTicketCode[ticket.id]?.payload?.startsWith('data:image') ? (
-                      <img src={activeTicketCode[ticket.id]!.payload} alt="Ticket code" style={{ width: '100%' }} />
+                      <div style={{ background: 'white', padding: '0.75rem', borderRadius: '0.75rem', display: 'inline-block', boxShadow: '0 8px 20px rgba(0,0,0,0.08)' }}>
+                        <img
+                          src={activeTicketCode[ticket.id]!.payload}
+                          alt="Ticket QR code"
+                          style={{ width: '220px', height: '220px', objectFit: 'contain' }}
+                        />
+                        <div style={{ fontSize: '0.85rem', color: 'var(--gray-600)', marginTop: '0.4rem' }}>
+                          {ticket.eventTitle}
+                        </div>
+                      </div>
                     ) : (
                       <div className="code-block">
                         <small>{activeTicketCode[ticket.id]?.type || 'QR'}</small>

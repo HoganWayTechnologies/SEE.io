@@ -42,6 +42,22 @@ export default function SiteNav({ links = defaultLinks, activePath, searchSlot }
         merged.push({ to: adminLink, label: 'Admin', key: 'admin' })
       }
     }
+    if (!auth.idToken) {
+      const protectedPrefixes = [
+        '/saved',
+        '/tickets',
+        '/profile',
+        '/settings',
+        '/preferences',
+        '/inbox',
+        '/calendar',
+        '/host',
+        '/publisher',
+        '/my-events',
+        '/reports'
+      ]
+      return merged.filter(link => !protectedPrefixes.some(prefix => link.to.startsWith(prefix)))
+    }
     return merged
   }, [links, auth])
 
@@ -54,11 +70,29 @@ export default function SiteNav({ links = defaultLinks, activePath, searchSlot }
       <div className="container nav-container">
         <Link to="/" className="nav-brand">SEE.io</Link>
 
-        {searchSlot && (
-          <div className="nav-search-wrapper">
-            {searchSlot}
+        <div className="nav-center">
+          {searchSlot && (
+            <div className="nav-search-wrapper nav-search-desktop">
+              {searchSlot}
+            </div>
+          )}
+          <div className="nav-link-list nav-link-list-desktop">
+            {computedLinks.map(link => {
+              const key = link.key || link.to
+              const isActive = resolvedActive === key || resolvedActive.startsWith(link.to)
+              return (
+                <Link key={key} to={link.to} className={`nav-link ${isActive ? 'active' : ''}`}>
+                  {link.label}
+                </Link>
+              )
+            })}
           </div>
-        )}
+        </div>
+
+        <div className="nav-actions nav-actions-desktop">
+          {auth.idToken && <NotificationBell />}
+          <UserMenu />
+        </div>
 
         <button
           className="nav-hamburger"
@@ -70,19 +104,29 @@ export default function SiteNav({ links = defaultLinks, activePath, searchSlot }
         </button>
 
         <div className={`nav-links ${menuOpen ? 'nav-links-open' : ''}`}>
-          {computedLinks.map(link => {
-            const key = link.key || link.to
-            const isActive = resolvedActive === key || resolvedActive.startsWith(link.to)
-            return (
-              <Link key={key} to={link.to} className={`nav-link ${isActive ? 'active' : ''}`}>
-                {link.label}
-              </Link>
-            )
-          })}
-          <NotificationBell />
-          <UserMenu />
+          {searchSlot && (
+            <div className="nav-search-wrapper nav-search-mobile">
+              {searchSlot}
+            </div>
+          )}
+          <div className="nav-link-list nav-link-list-mobile">
+            {computedLinks.map(link => {
+              const key = link.key || link.to
+              const isActive = resolvedActive === key || resolvedActive.startsWith(link.to)
+              return (
+                <Link key={key} to={link.to} className={`nav-link ${isActive ? 'active' : ''}`}>
+                  {link.label}
+                </Link>
+              )
+            })}
+          </div>
+          <div className="nav-actions nav-actions-mobile">
+            {auth.idToken && <NotificationBell />}
+            <UserMenu />
+          </div>
         </div>
       </div>
+      {menuOpen && <div className="nav-overlay" onClick={() => setMenuOpen(false)} />}
     </nav>
   )
 }

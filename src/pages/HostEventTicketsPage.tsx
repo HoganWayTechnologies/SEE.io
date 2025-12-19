@@ -212,7 +212,8 @@ export default function HostEventTicketsPage() {
     }
     try {
       setStatus(nextEnabled ? 'Enabling ticketing…' : 'Disabling ticketing…')
-      await api.updatePublisherEventAuthorized(eventId, { admissionType: nextEnabled ? 'see_ticketed' : 'open' }, auth.idToken)
+      const businessId = event?.businessId || (event as any)?.BusinessId || undefined
+      await api.updatePublisherEventAuthorized(eventId, { admissionType: nextEnabled ? 'see_ticketed' : 'open' }, auth.idToken, businessId)
       setTicketingEnabled(nextEnabled)
       setStatus(nextEnabled ? 'Ticketing enabled.' : 'Ticketing disabled.')
     } catch (err: any) {

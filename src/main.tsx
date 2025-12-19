@@ -24,6 +24,8 @@ import { RealtimeProvider } from './context/RealtimeContext'
 import MyEventsPage from './pages/MyEventsPage'
 import CreateEventPage from './pages/CreateEventPage'
 import PageBuilderPage from './pages/PageBuilderPage'
+import PublisherEventManagePage from './pages/PublisherEventManagePage'
+import EditEventPage from './pages/EditEventPage'
 import BusinessPageBuilder from './pages/BusinessPageBuilder'
 import TermsPage from './pages/TermsPage'
 import PrivacyPage from './pages/PrivacyPage'
@@ -86,6 +88,8 @@ function App() {
                 <Route path="/calendar" element={<RequireAuth><CalendarPage /></RequireAuth>} />
                 <Route path="/my-events" element={<RequireBusiness><MyEventsPage /></RequireBusiness>} />
                 <Route path="/publisher/create" element={<RequireBusiness><CreateEventPage /></RequireBusiness>} />
+                <Route path="/publisher/events/:eventId" element={<RequireBusiness><PublisherEventManagePage /></RequireBusiness>} />
+                <Route path="/publisher/events/:eventId/edit" element={<RequireBusiness><EditEventPage /></RequireBusiness>} />
                 <Route path="/publisher/events/:eventId/page" element={<RequireBusiness><PageBuilderPage /></RequireBusiness>} />
                 <Route path="/publisher/business/:businessId/page" element={<RequireBusiness><BusinessPageBuilder /></RequireBusiness>} />
                 <Route path="/publisher/business/page" element={<RequireBusiness><BusinessPageBuilder /></RequireBusiness>} />

@@ -42,7 +42,7 @@ const defaultFilters: FilterState = {
   forceDiscover: false,
   city: '',
   state: '',
-  radiusKm: '50',
+  radiusKm: '',
   venue: '',
   host: '',
   businessId: '',
@@ -127,6 +127,7 @@ export default function Discover() {
     const hostParam = searchParamsUrl.get('host') || ''
     const businessIdParam = searchParamsUrl.get('businessId') || ''
     const businessNameParam = searchParamsUrl.get('businessName') || ''
+    const radiusParam = searchParamsUrl.get('radiusKm') || ''
     const attrsParam = searchParamsUrl.get('attrs') || ''
     const attrsModeParam = searchParamsUrl.get('attrsMode') === 'all' ? 'all' : 'any'
     const parsedAttrs = attrsParam.split(',').map(a => a.trim()).filter(isVenueAttrKey)
@@ -139,6 +140,7 @@ export default function Discover() {
       host: hostParam,
       businessId: businessIdParam,
       businessName: businessNameParam,
+      radiusKm: radiusParam,
       attrs: parsedAttrs as VenueAttrKey[],
       attrsMode: attrsModeParam
     }
@@ -283,6 +285,7 @@ export default function Discover() {
       params.set('businessId', draftFilters.businessId.trim())
       if (draftFilters.businessName.trim()) params.set('businessName', draftFilters.businessName.trim())
     }
+    if (draftFilters.radiusKm.trim()) params.set('radiusKm', draftFilters.radiusKm.trim())
     if (draftFilters.attrs && draftFilters.attrs.length) {
       params.set('attrs', draftFilters.attrs.join(','))
       params.set('attrsMode', draftFilters.attrsMode || 'any')

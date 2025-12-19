@@ -7,6 +7,43 @@ const textDecoder = typeof TextDecoder !== 'undefined' ? new TextDecoder() : nul
 
 const hasCrypto = () => typeof window !== 'undefined' && !!window.crypto?.subtle
 
+const readFromStorage = (key: string): string | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const local = window.localStorage.getItem(key)
+    if (local !== null && local !== undefined) return local
+  } catch {
+    // ignore and fall back
+  }
+  try {
+    return window.sessionStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+const writeToStorage = (key: string, value: string | null) => {
+  if (typeof window === 'undefined') return
+  try {
+    if (value === null) {
+      window.localStorage.removeItem(key)
+    } else {
+      window.localStorage.setItem(key, value)
+    }
+  } catch {
+    // ignore localStorage write errors
+  }
+  try {
+    if (value === null) {
+      window.sessionStorage.removeItem(key)
+    } else {
+      window.sessionStorage.setItem(key, value)
+    }
+  } catch {
+    // ignore sessionStorage write errors
+  }
+}
+
 const bufferToBase64 = (buffer: ArrayBuffer) => {
   if (typeof window === 'undefined') return ''
   const bytes = new Uint8Array(buffer)
@@ -29,12 +66,12 @@ const base64ToBuffer = (value: string) => {
 
 const getSessionKey = async (): Promise<CryptoKey | null> => {
   if (!hasCrypto() || !textEncoder) return null
-  let rawKey = sessionStorage.getItem(SESSION_KEY_STORAGE)
+  let rawKey = readFromStorage(SESSION_KEY_STORAGE)
   if (!rawKey) {
     const bytes = new Uint8Array(32)
     window.crypto.getRandomValues(bytes)
     rawKey = bufferToBase64(bytes.buffer)
-    sessionStorage.setItem(SESSION_KEY_STORAGE, rawKey)
+    writeToStorage(SESSION_KEY_STORAGE, rawKey)
   }
   const keyBuffer = base64ToBuffer(rawKey)
   return window.crypto.subtle.importKey('raw', keyBuffer, 'AES-GCM', false, ['encrypt', 'decrypt'])
@@ -43,27 +80,29 @@ const getSessionKey = async (): Promise<CryptoKey | null> => {
 export const saveRefreshTokenSecure = async (token: string | null) => {
   if (typeof window === 'undefined') return
   if (!token) {
-    window.localStorage.removeItem(REFRESH_STORAGE_KEY)
-    window.sessionStorage.removeItem(FALLBACK_SESSION_KEY)
+    writeToStorage(REFRESH_STORAGE_KEY, null)
+    writeToStorage(FALLBACK_SESSION_KEY, null)
     return
   }
   const key = await getSessionKey()
   if (!key || !textEncoder || !hasCrypto()) {
-    window.sessionStorage.setItem(FALLBACK_SESSION_KEY, token)
+    writeToStorage(FALLBACK_SESSION_KEY, token)
     return
   }
   const iv = window.crypto.getRandomValues(new Uint8Array(12))
   const encoded = textEncoder.encode(token)
   const cipher = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
   const payload = `${bufferToBase64(iv.buffer)}.${bufferToBase64(cipher)}`
-  window.localStorage.setItem(REFRESH_STORAGE_KEY, payload)
+  writeToStorage(REFRESH_STORAGE_KEY, payload)
+  // Clear any plaintext fallback if encryption succeeds
+  writeToStorage(FALLBACK_SESSION_KEY, null)
 }
 
 export const loadRefreshTokenSecure = async (): Promise<string | null> => {
   if (typeof window === 'undefined') return null
-  const fallback = window.sessionStorage.getItem(FALLBACK_SESSION_KEY)
+  const fallback = readFromStorage(FALLBACK_SESSION_KEY)
   if (fallback) return fallback
-  const payload = window.localStorage.getItem(REFRESH_STORAGE_KEY)
+  const payload = readFromStorage(REFRESH_STORAGE_KEY)
   if (!payload) return null
   const [ivPart, dataPart] = payload.split('.')
   if (!ivPart || !dataPart) return null

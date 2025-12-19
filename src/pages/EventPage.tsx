@@ -390,16 +390,6 @@ export default function EventPage() {
 
       // Paid tickets: require Stripe checkout to succeed; do not fall back automatically.
       const checkout = await api.createStripeCheckout(id, selectedTicketId, ticketQuantity, idToken)
-      const redirectUrl =
-        checkout?.url ||
-        checkout?.checkoutUrl ||
-        checkout?.checkoutSessionUrl ||
-        checkout?.stripeUrl ||
-        checkout?.redirectUrl
-      if (redirectUrl) {
-        window.location.href = redirectUrl
-        return
-      }
       if (checkout?.clientSecret || checkout?.paymentIntentId || checkout?.checkoutId) {
         setPurchaseStatus('Stripe checkout created. Complete payment to finalize your ticket.')
         return
@@ -525,13 +515,28 @@ export default function EventPage() {
     return 'We will update this section once admission details are confirmed.'
   })()
   const externalTicketUrl = event.externalTicketUrl || null
-  // Resolve banner image from common possible fields without strict typing
-  const bannerUrl =
-    ((event as any)?.bannerUrl) ||
-    ((event as any)?.imageUrl) ||
-    ((event as any)?.coverImage) ||
-    (((event as any)?.media && (event as any).media[0] && (event as any).media[0].url) ? (event as any).media[0].url : null) ||
-    null
+  const normalizeBannerUrl = (input: unknown): string | null => {
+    if (!input || typeof input !== 'string') return null
+    if (input.startsWith('data:')) return input
+    try {
+      const parsed = new URL(input)
+      const hasExtension = /\.(avif|gif|jpe?g|png|webp|svg)$/i.test(parsed.pathname)
+      if (hasExtension || parsed.searchParams.has('format')) return input
+      parsed.searchParams.set('format', 'jpg')
+      return parsed.toString()
+    } catch {
+      return input
+    }
+  }
+  const bannerUrlCandidates: Array<string | null> = [
+    normalizeBannerUrl((event as any)?.heroImageUrl),
+    normalizeBannerUrl(event.image || null),
+    normalizeBannerUrl((event as any)?.bannerUrl || null),
+    normalizeBannerUrl((event as any)?.imageUrl || null),
+    normalizeBannerUrl((event as any)?.coverImage || null),
+    normalizeBannerUrl(((event as any)?.media && (event as any).media[0] && (event as any).media[0].url) ? (event as any).media[0].url : null)
+  ]
+  const bannerUrl = bannerUrlCandidates.find(url => !!url) || null
 
   const canonicalUrl = `${SITE_URL}/event/${encodeURIComponent(event?.id || id || '')}`
   const seoDescription =

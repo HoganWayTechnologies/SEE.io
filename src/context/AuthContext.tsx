@@ -259,12 +259,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPrimaryBusinessId(derivedPrimary)
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('seeProfile', JSON.stringify(nextProfile || null))
-      window.localStorage.removeItem('seeIdToken')
-      window.localStorage.removeItem('seeSocxalAccessToken')
+      window.localStorage.setItem('seeIdToken', nextIdToken || '')
       window.sessionStorage.setItem('seeIdToken', nextIdToken || '')
       if (tokens?.socxalToken) {
+        window.localStorage.setItem('seeSocxalAccessToken', tokens.socxalToken)
         window.sessionStorage.setItem('seeSocxalAccessToken', tokens.socxalToken)
       } else {
+        window.localStorage.removeItem('seeSocxalAccessToken')
         window.sessionStorage.removeItem('seeSocxalAccessToken')
       }
       if (derivedPrimary) {

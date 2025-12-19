@@ -593,6 +593,7 @@ export default function MyEventsPage() {
                           >
                             View page
                           </a>
+                          <Link to={`/publisher/events/${evt.id || evt.eventId || ''}/edit`} className="nav-link">Edit details</Link>
                           {!(evt.status || '').toLowerCase().includes('canceled') && !(evt.status || '').toLowerCase().includes('rejected') && (
                             <>
                               <Link to={`/publisher/events/${evt.id || evt.eventId || ''}`} className="nav-link">Manage</Link>

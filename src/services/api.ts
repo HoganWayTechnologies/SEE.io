@@ -34,6 +34,7 @@ export interface Event {
   price?: string
   organizer?: string
   image?: string
+  heroImageUrl?: string | null
   category?: string
   status?: string
   promoted?: boolean
@@ -137,10 +138,11 @@ export interface UserBusinessMembership {
 const normalizeSearchResponse = (data: any): SearchResponse => {
   if (!data) return { items: [] }
   if (Array.isArray(data)) return { items: data }
-  const items = data.items || data.events || data.results || []
-  const totalCount = data.totalCount ?? data.count
-  const hasMore = typeof data.hasMore === 'boolean' ? data.hasMore : Boolean(data.nextPageToken)
-  return { items, totalCount, hasMore, nextPageToken: data.nextPageToken || null }
+  const items = data.items || data.Items || data.events || data.results || []
+  const totalCount = data.totalCount ?? data.TotalCount ?? data.count
+  const nextToken = data.nextPageToken || data.NextPageToken || null
+  const hasMore = typeof data.hasMore === 'boolean' ? data.hasMore : Boolean(nextToken)
+  return { items, totalCount, hasMore, nextPageToken: nextToken }
 }
 
 const normalizeVenue = (item: any): Venue => {
@@ -223,14 +225,14 @@ export const seeApi = {
     if (params.attrsAny && params.attrsAny.length) queryParams.set('attrsAny', params.attrsAny.join(','))
     if (params.attrsAll && params.attrsAll.length) queryParams.set('attrsAll', params.attrsAll.join(','))
 
-    const response = await fetch(`${API_BASE_URL}/v1/events?${queryParams}`)
+    const response = await fetch(`${API_BASE_URL}/v1/public/events?${queryParams}`)
     if (!response.ok) throw new Error('Failed to search events (SEE.API)')
     const data = await response.json()
     return normalizeSearchResponse(data)
   },
 
   async getEvent(id: string): Promise<Event> {
-    const response = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(id)}`)
+    const response = await fetch(`${API_BASE_URL}/v1/public/events/${encodeURIComponent(id)}`)
     if (!response.ok) throw new Error('Failed to get event')
     return response.json()
   }
@@ -317,6 +319,10 @@ export interface CreateEventRequest {
   tags?: string[]
   admissionType?: string
   externalTicketUrl?: string | null
+  hostId?: string | null
+  hostName?: string | null
+  imageUrl?: string | null
+  ImageUrl?: string | null
 }
 
 export type EventInteractionType =
@@ -928,8 +934,9 @@ export const api = {
     return resp.json()
   },
 
-  async updatePublisherEventAuthorized(eventId: string, payload: Partial<CreateEventRequest>, idToken: string) {
-    const resp = await fetch(`${API_BASE_URL}/v1/publisher/events/${encodeURIComponent(eventId)}`, {
+  async updatePublisherEventAuthorized(eventId: string, payload: Partial<CreateEventRequest>, idToken: string, businessId?: string | null) {
+    const suffix = businessId ? `?businessId=${encodeURIComponent(businessId)}` : ''
+    const resp = await fetch(`${API_BASE_URL}/v1/publisher/events/${encodeURIComponent(eventId)}${suffix}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${idToken}`,
@@ -1042,18 +1049,30 @@ export const api = {
     return resp.json()
   },
 
-  async uploadEventImage(eventId: string, file: File, variant: string, idToken: string) {
+  async uploadEventImage(eventId: string, file: File, variant: string, idToken: string, businessId?: string | null) {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('variant', variant)
 
-    const resp = await fetch(`${API_BASE_URL}/v1/publisher/events/${encodeURIComponent(eventId)}/images`, {
+    const suffix = businessId ? `?businessId=${encodeURIComponent(businessId)}` : ''
+    const resp = await fetch(`${API_BASE_URL}/v1/publisher/events/${encodeURIComponent(eventId)}/images${suffix}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${idToken}` },
       body: formData
     })
     if (!resp.ok) throw new Error('Failed to upload image')
-    return resp.json()
+    const data = await resp.json().catch(() => ({}))
+    const parsed = data && typeof data === 'object' ? data as Record<string, any> : {}
+    const resolvedUrl =
+      parsed.url ||
+      parsed.imageUrl ||
+      parsed.ImageUrl ||
+      parsed.heroImageUrl ||
+      parsed.HeroImageUrl ||
+      parsed.location ||
+      parsed.Location ||
+      null
+    return { ...parsed, resolvedUrl }
   },
 
   async fetchPublisherEventStats(eventId: string, idToken: string) {
@@ -1083,6 +1102,19 @@ export const api = {
     })
     if (!resp.ok) throw new Error('Failed to load media')
     return resp.json()
+  },
+
+  async promoteEventHero(eventId: string, mediaId: string, idToken: string, businessId?: string | null) {
+    const suffix = businessId ? `?businessId=${encodeURIComponent(businessId)}` : ''
+    const resp = await fetch(`${API_BASE_URL}/v1/publisher/events/${encodeURIComponent(eventId)}/media/${encodeURIComponent(mediaId)}/hero${suffix}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}` }
+    })
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '')
+      throw new Error(text || 'Failed to update hero image')
+    }
+    return resp.json().catch(() => ({}))
   },
 
   async fetchEventImages(eventId: string, idToken: string, params?: { purpose?: string; businessId?: string | null }) {
@@ -1691,8 +1723,11 @@ export const api = {
     return resp.json()
   },
 
-  async fetchEventTickets(eventId: string): Promise<TicketType[]> {
-    const resp = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/tickets`)
+  async fetchEventTickets(eventId: string, idToken?: string | null): Promise<TicketType[]> {
+    const headers: Record<string, string> = {}
+    if (idToken) headers.Authorization = `Bearer ${idToken}`
+    const resp = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/tickets`, { headers })
+    if (resp.status === 401 || resp.status === 403) throw new Error('Sign in to view tickets.')
     if (!resp.ok) throw new Error('Failed to load tickets')
     const data = await resp.json()
     const list = Array.isArray(data?.items)
@@ -1727,14 +1762,26 @@ export const api = {
     return list
   },
 
-  async purchaseTicket(eventId: string, ticketId: string, quantity: number, idToken: string) {
+  async purchaseTicket(
+    eventId: string,
+    ticketId: string,
+    quantity: number,
+    idToken: string,
+    checkoutId?: string,
+    opts?: { recipientEmail?: string | null; recipientPhone?: string | null }
+  ) {
     const resp = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/tickets/${encodeURIComponent(ticketId)}/purchase`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${idToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ quantity })
+      body: JSON.stringify({
+        quantity,
+        checkoutId,
+        recipientEmail: opts?.recipientEmail || undefined,
+        recipientPhone: opts?.recipientPhone || undefined
+      })
     })
     if (!resp.ok) {
       const errBody = await resp.text()
@@ -1743,14 +1790,23 @@ export const api = {
     return resp.json()
   },
 
-  async createStripeCheckout(eventId: string, ticketId: string, quantity: number, idToken: string) {
+  async createStripeCheckout(
+    eventId: string,
+    ticketId: string,
+    quantity: number,
+    idToken: string,
+    opts?: { recipientEmail?: string | null }
+  ) {
     const resp = await fetch(`${API_BASE_URL}/v1/events/${encodeURIComponent(eventId)}/tickets/${encodeURIComponent(ticketId)}/checkout/stripe`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${idToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ quantity })
+      body: JSON.stringify({
+        quantity,
+        recipientEmail: opts?.recipientEmail || undefined
+      })
     })
     if (!resp.ok) {
       const errBody = await resp.text()
@@ -2007,6 +2063,21 @@ const formatTime = (input?: string) => {
   return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 }
 
+const ensureImageUrl = (input?: string | null): string | null => {
+  if (!input || typeof input !== 'string') return null
+  if (input.startsWith('data:')) return input
+  try {
+    const parsed = new URL(input)
+    const hasExtension = /\.(avif|gif|jpe?g|png|webp|svg)$/i.test(parsed.pathname)
+    if (hasExtension) return input
+    if (parsed.searchParams.has('format')) return input
+    parsed.searchParams.set('format', 'jpg')
+    return parsed.toString()
+  } catch {
+    return input
+  }
+}
+
 export const formatEventForDisplay = (event: any): Event => {
   const startIso = pickValue(event.date, event.startDate, event.startUtc, event.StartUtc)
   const timeIso = pickValue(event.time, event.startTime, event.startUtc, event.StartUtc)
@@ -2071,6 +2142,42 @@ export const formatEventForDisplay = (event: any): Event => {
     event.hostDisplayName,
     event.organizer
   )
+  const venueData = pickValue(event.venue, event.Venue)
+  const venueNameFromNested = pickValue(
+    event.venueName,
+    event.VenueName,
+    venueData?.name,
+    venueData?.Name
+  )
+  const venueAddressLine = pickValue(event.venueAddress, event.VenueAddress, venueData?.address, venueData?.Address)
+  const venueCity = pickValue(event.city, event.City, venueData?.city, venueData?.City)
+  const venueState = pickValue(event.state, event.State, venueData?.state, venueData?.State)
+  const cityStateParts = [venueCity, venueState].filter(Boolean)
+  const cityState = cityStateParts.length ? cityStateParts.join(', ') : undefined
+  const venueAddressParts = [venueAddressLine, cityState].filter(Boolean)
+  const venueAddressFromNested = venueAddressParts.length ? venueAddressParts.join(', ') : undefined
+  const locationFromEvent = pickValue(
+    event.location,
+    typeof event.venue === 'string' ? event.venue : undefined,
+    event.VenueName,
+    event.VenueAddress,
+    event.venueName
+  )
+  const locationFromNested = (() => {
+    const parts = [venueNameFromNested, venueAddressFromNested || venueAddressLine]
+    return parts.filter(Boolean).join(' - ')
+  })()
+  const normalizedVenueAddress = venueAddressFromNested || venueAddressLine || null
+  const heroImageCandidate = pickValue(
+    event.heroImageUrl,
+    event.heroImage,
+    event.HeroImageUrl,
+    event.HeroImage,
+    event.hero?.url,
+    event.hero?.imageUrl
+  )
+  const normalizedHero = ensureImageUrl(heroImageCandidate)
+  const fallbackImage = ensureImageUrl(pickValue(event.image, event.imageUrl, event.ImageUrl))
 
   return {
     id: pickValue(event.id, event.eventId, event.Id) || 'unknown',
@@ -2078,15 +2185,15 @@ export const formatEventForDisplay = (event: any): Event => {
     date: formatDate(startIso) || pickValue(event.date, event.startDate, event.StartUtc, 'Date TBD'),
     time: formatTime(timeIso) || pickValue(event.time, event.startTime),
     location:
-      pickValue(event.location, event.venue, event.VenueName, event.VenueAddress, event.venueName) ||
-      'Location TBD',
-    venue: pickValue(event.venue, event.venueName, event.VenueName),
-    venueName: pickValue(event.venueName, event.VenueName) || null,
-    venueAddress: pickValue(event.venueAddress, event.VenueAddress) || null,
+      locationFromEvent || locationFromNested || 'Location TBD',
+    venue: pickValue(typeof event.venue === 'string' ? event.venue : undefined, venueNameFromNested),
+    venueName: venueNameFromNested || null,
+    venueAddress: normalizedVenueAddress,
     description: pickValue(event.description, event.Description),
     price: pickValue(event.price, event.ticketPrice, event.Price),
     organizer: pickValue(event.organizer, event.publisher, event.VenueName),
-    image: pickValue(event.image, event.imageUrl, event.ImageUrl),
+    image: normalizedHero || fallbackImage || undefined,
+    heroImageUrl: normalizedHero,
     category: pickValue(event.category, event.Category),
     status: pickValue(event.status, event.Status),
     promoted: Boolean(

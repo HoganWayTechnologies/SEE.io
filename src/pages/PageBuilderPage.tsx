@@ -68,6 +68,18 @@ export default function PageBuilderPage() {
     return defaultBlockPalette
   }, [builder.catalog])
 
+  const heroMediaIds = useMemo(() => {
+    return new Set(
+      media
+        .map(item => ({
+          id: item?.id || item?.mediaId || null,
+          purposes: Array.isArray(item?.purposes) ? item.purposes : []
+        }))
+        .filter(item => item.id && item.purposes.some((p: string) => (p || '').toLowerCase() === 'hero'))
+        .map(item => item.id as string)
+    )
+  }, [media])
+
   const normalizeBlock = useCallback((block: any) => ({
     ...block,
     id: block.id || block.Id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
@@ -227,6 +239,18 @@ export default function PageBuilderPage() {
       setMediaStatus('Uploaded')
     } catch (err: any) {
       setMediaStatus(err?.message || 'Upload failed')
+    }
+  }
+
+  const promoteHeroImage = async (mediaId: string) => {
+    if (!eventId || !auth.idToken || !mediaId) return
+    setMediaStatus('Setting hero image...')
+    try {
+      await api.promoteEventHero(eventId, mediaId, auth.idToken, businessId || undefined)
+      setMediaStatus('Hero image updated.')
+      await reloadBuilder()
+    } catch (err: any) {
+      setMediaStatus(err?.message || 'Failed to update hero image')
     }
   }
 
@@ -509,10 +533,34 @@ export default function PageBuilderPage() {
                   {media.length > 0 && (
                     <div style={{ marginTop: '0.5rem' }}>
                       <strong>Media Library</strong>
-                      <ul style={{ paddingLeft: '1rem' }}>
-                        {media.slice(0, 5).map(item => (
-                          <li key={item.id || item.mediaId || item.url}>{item.name || item.fileName || item.url}</li>
-                        ))}
+                      <ul style={{ paddingLeft: '1rem', display: 'grid', gap: '0.5rem' }}>
+                        {media.slice(0, 8).map(item => {
+                          const mediaId = item.id || item.mediaId || null
+                          const key = mediaId || item.url || crypto.randomUUID?.() || Math.random().toString(36).slice(2)
+                          const isHero = mediaId ? heroMediaIds.has(mediaId) : false
+                          const displayName = item.name || item.fileName || mediaId || item.url
+                          return (
+                            <li key={key} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                              <span>{displayName}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                {isHero ? (
+                                  <span className="badge badge-active">Hero image</span>
+                                ) : mediaId ? (
+                                  <button
+                                    className="btn btn-secondary"
+                                    type="button"
+                                    onClick={() => promoteHeroImage(mediaId)}
+                                  >
+                                    Set as hero
+                                  </button>
+                                ) : (
+                                  <span className="badge badge-draft">Cannot promote</span>
+                                )}
+                              </div>
+                            </li>
+                          )
+                        })}
+                        {media.length > 8 && <li style={{ color: 'var(--gray-600)' }}>Showing first 8 items. Uploads with the hero tag will appear here.</li>}
                       </ul>
                     </div>
                   )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { api } from '../services/api'
+import { api, CreateEventRequest } from '../services/api'
 import SiteNav from '../components/SiteNav'
 
 const defaultEvent = {
@@ -26,6 +26,7 @@ export default function CreateEventPage() {
   const auth = useAuth()
   const navigate = useNavigate()
   const attemptedBusinessRefresh = useRef(false)
+  const heroInputRef = useRef<HTMLInputElement | null>(null)
   const businessOptions = useMemo(() => {
     return (auth.businessMemberships || [])
       .map(member => ({
@@ -53,6 +54,9 @@ export default function CreateEventPage() {
   const [hostSearch, setHostSearch] = useState('')
   const [hostResults, setHostResults] = useState<any[]>([])
   const [hostStatus, setHostStatus] = useState<string | null>(null)
+  const [heroFile, setHeroFile] = useState<File | null>(null)
+  const [heroPreview, setHeroPreview] = useState<string | null>(null)
+  const [heroStatus, setHeroStatus] = useState<string | null>(null)
 
   // Ensure we have the latest business memberships and keep selection valid
   useEffect(() => {
@@ -143,6 +147,47 @@ export default function CreateEventPage() {
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
+  const resetHeroSelection = () => {
+    if (typeof window === 'undefined') return
+    setHeroFile(null)
+    setHeroPreview(prev => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+    if (heroInputRef.current) heroInputRef.current.value = ''
+  }
+
+  const handleHeroFileSelection = (file: File | null) => {
+    if (typeof window === 'undefined') return
+    setHeroStatus(null)
+    setHeroFile(file)
+    setHeroPreview(prev => {
+      if (prev) URL.revokeObjectURL(prev)
+      return file ? URL.createObjectURL(file) : null
+    })
+  }
+
+  const resolveUploadedImageUrl = (result: any): string | null => {
+    if (!result || typeof result !== 'object') return null
+    return (
+      result.resolvedUrl ||
+      result.url ||
+      result.imageUrl ||
+      result.ImageUrl ||
+      result.heroImageUrl ||
+      result.HeroImageUrl ||
+      null
+    )
+  }
+
+  useEffect(() => {
+    return () => {
+      if (heroPreview && typeof window !== 'undefined') {
+        URL.revokeObjectURL(heroPreview)
+      }
+    }
+  }, [heroPreview])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!auth.idToken) {
@@ -151,13 +196,14 @@ export default function CreateEventPage() {
     }
     setSubmitting(true)
     setStatus(null)
+    setHeroStatus(null)
     try {
       const resolvedTimezone = form.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
       const tagsArray = form.tags
         .split(',')
         .map(tag => tag.trim())
         .filter(Boolean)
-      const payload = {
+      const payload: CreateEventRequest = {
         title: form.title.trim(),
         description: form.description.trim(),
         category: form.category.trim() || null,
@@ -177,10 +223,66 @@ export default function CreateEventPage() {
         }
       }
       const resp = await api.createPublisherEventAuthorized(payload, auth.idToken, selectedBusinessId || undefined)
-      setStatus('Event submitted for review.')
+      const messages: string[] = ['Event submitted for review.']
+      const newEventId = resp?.id || resp?.eventId || resp?.event?.id || null
+      let heroNavigationDelay = 0
+
+      if (heroFile) {
+        if (newEventId) {
+          try {
+            setHeroStatus('Uploading hero image…')
+            const uploadResult = await api.uploadEventImage(newEventId, heroFile, 'hero', auth.idToken, selectedBusinessId || undefined)
+            const uploadedUrl = resolveUploadedImageUrl(uploadResult)
+            if (uploadedUrl) {
+              try {
+                await api.updatePublisherEventAuthorized(
+                  newEventId,
+                  { imageUrl: uploadedUrl, ImageUrl: uploadedUrl },
+                  auth.idToken,
+                  selectedBusinessId || undefined
+                )
+                messages.push('Hero image uploaded.')
+                setHeroStatus('Hero image uploaded.')
+                resetHeroSelection()
+              } catch (linkErr: any) {
+                const linkMessage =
+                  linkErr?.message || 'Hero image uploaded, but failed to attach URL to the event.'
+                messages.push(linkMessage)
+                setHeroStatus(linkMessage)
+                heroNavigationDelay = 2400
+              }
+            } else {
+              const missingUrlMessage = 'Hero image uploaded, but no URL was returned.'
+              messages.push(missingUrlMessage)
+              setHeroStatus(missingUrlMessage)
+              heroNavigationDelay = 2400
+            }
+          } catch (heroErr: any) {
+            const heroMessage = heroErr?.message || 'Hero image upload failed.'
+            messages.push(heroMessage)
+            setHeroStatus(heroMessage)
+            heroNavigationDelay = 2400
+          }
+        } else {
+          const missingIdMessage = 'Event created, but the response did not include an event id for hero upload.'
+          messages.push(missingIdMessage)
+          setHeroStatus(missingIdMessage)
+          heroNavigationDelay = 2400
+        }
+      }
+
+      setStatus(messages.join(' '))
       setForm(defaultEvent)
       if (resp?.id || resp?.eventId) {
-        navigate('/my-events')
+        if (heroNavigationDelay > 0) {
+          if (typeof window !== 'undefined') {
+            window.setTimeout(() => navigate('/my-events'), heroNavigationDelay)
+          } else {
+            navigate('/my-events')
+          }
+        } else {
+          navigate('/my-events')
+        }
       }
     } catch (err: any) {
       setStatus(err?.message || 'Failed to create event')
@@ -293,6 +395,27 @@ export default function CreateEventPage() {
                   <label className="form-label">Tags</label>
                   <input className="form-input" value={form.tags} onChange={(e) => updateField('tags', e.target.value)} placeholder="Live music, nightlife, ... (comma separated)" />
                 </div>
+              </div>
+              <div>
+                <label className="form-label">Hero Image</label>
+                <input
+                  ref={heroInputRef}
+                  className="form-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleHeroFileSelection(e.target.files?.[0] || null)}
+                />
+                <small style={{ color: 'var(--gray-600)' }}>Landscape 16:9 images work best. PNG or JPG up to 5&nbsp;MB.</small>
+                {heroPreview && (
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <img
+                      src={heroPreview}
+                      alt="Selected hero preview"
+                      style={{ width: '100%', maxWidth: '520px', borderRadius: '0.75rem', boxShadow: 'var(--shadow-sm)' }}
+                    />
+                  </div>
+                )}
+                {heroStatus && <p style={{ color: 'var(--gray-600)', marginTop: '0.5rem' }}>{heroStatus}</p>}
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1 }}>
