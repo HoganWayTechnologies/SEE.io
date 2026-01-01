@@ -195,6 +195,18 @@ const normalizeVenuesResponse = (data: any): Venue[] => {
   return items.map(normalizeVenue)
 }
 
+const inferTicketErrorLabel = (reason?: string | null): string | null => {
+  if (!reason) return null
+  const lower = reason.toLowerCase()
+  if (lower === 'not_found') return 'Ticket not found.'
+  if (lower === 'wrong_event') return 'This ticket belongs to a different event.'
+  if (lower === 'wrong_venue') return 'This ticket is linked to another venue.'
+  if (lower === 'outside_window') return 'Check-in window is not open for this ticket.'
+  if (lower === 'already_used') return 'Ticket already scanned.'
+  if (lower === 'unauthorized' || lower === 'forbidden') return 'You are not authorized to scan this ticket.'
+  return null
+}
+
 // Direct SEE.API calls (when server is not available)
 export const seeApi = {
   async searchEvents(params: SearchParams = {}): Promise<SearchResponse> {
@@ -1075,20 +1087,16 @@ export const api = {
     return { ...parsed, resolvedUrl }
   },
 
-  async fetchPublisherEventStats(eventId: string, idToken: string) {
-    const resp = await fetch(`${API_BASE_URL}/v1/publisher/events/${encodeURIComponent(eventId)}/stats`, {
-      headers: { Authorization: `Bearer ${idToken}` }
-    })
-    if (!resp.ok) throw new Error('Failed to load event stats')
-    return resp.json()
-  },
-
   async fetchPublisherEventInteractions(eventId: string, idToken: string, params?: { businessId?: string }): Promise<EventInteractionSummary> {
     const query = new URLSearchParams()
     if (params?.businessId) query.set('businessId', params.businessId)
     const suffix = query.toString() ? `?${query}` : ''
+    const headers: Record<string, string> = { Authorization: `Bearer ${idToken}` }
+    if (params?.businessId) {
+      headers['X-SEE-BusinessId'] = params.businessId
+    }
     const resp = await fetch(`${API_BASE_URL}/v1/publisher/events/${encodeURIComponent(eventId)}/interactions${suffix}`, {
-      headers: { Authorization: `Bearer ${idToken}` }
+      headers
     })
     if (!resp.ok) throw new Error('Failed to load event interactions')
     return resp.json()
@@ -1645,62 +1653,38 @@ export const api = {
     return resp.json()
   },
 
-  async fetchBusinessOverviewMetrics(idToken: string, params: { fromUtc: string; toUtc: string; businessId?: string | null }) {
+  async fetchBusinessOverviewMetrics(idToken: string, params: { businessId: string; fromUtc: string; toUtc: string }) {
+    if (!params.businessId) throw new Error('Business ID is required for analytics.')
     const query = new URLSearchParams({ fromUtc: params.fromUtc, toUtc: params.toUtc })
-    const target = `${API_BASE_URL}/v1/business/metrics/overview?${query.toString()}`
-    const fallback = params.businessId
-      ? `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/overview?${query.toString()}`
-      : null
-    const resp = await fetch(target, { headers: { Authorization: `Bearer ${idToken}` } })
+    const endpoint = `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/overview?${query.toString()}`
+    const resp = await fetch(endpoint, { headers: { Authorization: `Bearer ${idToken}` } })
     if (resp.status === 401 || resp.status === 403) throw new Error('You do not have access to analytics.')
-    if (resp.ok) return resp.json()
-    if (fallback) {
-      const alt = await fetch(fallback, { headers: { Authorization: `Bearer ${idToken}` } })
-      if (alt.status === 401 || alt.status === 403) throw new Error('You do not have access to analytics.')
-      if (!alt.ok) throw new Error('Failed to load analytics overview')
-      return alt.json()
-    }
-    throw new Error('Failed to load analytics overview')
+    if (!resp.ok) throw new Error('Failed to load analytics overview')
+    return resp.json()
   },
 
-  async fetchBusinessEventMetrics(idToken: string, params: { fromUtc: string; toUtc: string; sort?: string; take?: number; businessId?: string | null }) {
+  async fetchBusinessEventMetrics(idToken: string, params: { businessId: string; fromUtc: string; toUtc: string; sort?: string; take?: number }) {
+    if (!params.businessId) throw new Error('Business ID is required for analytics.')
     const query = new URLSearchParams({ fromUtc: params.fromUtc, toUtc: params.toUtc })
     if (params.sort) query.set('sort', params.sort)
     if (params.take) query.set('take', params.take.toString())
-    const target = `${API_BASE_URL}/v1/business/metrics/events?${query.toString()}`
-    const fallback = params.businessId
-      ? `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/events?${query.toString()}`
-      : null
-    const resp = await fetch(target, { headers: { Authorization: `Bearer ${idToken}` } })
+    const endpoint = `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/events?${query.toString()}`
+    const resp = await fetch(endpoint, { headers: { Authorization: `Bearer ${idToken}` } })
     if (resp.status === 401 || resp.status === 403) throw new Error('You do not have access to analytics.')
-    if (resp.ok) return resp.json()
-    if (fallback) {
-      const alt = await fetch(fallback, { headers: { Authorization: `Bearer ${idToken}` } })
-      if (alt.status === 401 || alt.status === 403) throw new Error('You do not have access to analytics.')
-      if (!alt.ok) throw new Error('Failed to load event analytics')
-      return alt.json()
-    }
-    throw new Error('Failed to load event analytics')
+    if (!resp.ok) throw new Error('Failed to load event analytics')
+    return resp.json()
   },
 
-  async fetchBusinessVenueMetrics(idToken: string, params: { fromUtc: string; toUtc: string; sort?: string; take?: number; businessId?: string | null }) {
+  async fetchBusinessVenueMetrics(idToken: string, params: { businessId: string; fromUtc: string; toUtc: string; sort?: string; take?: number }) {
+    if (!params.businessId) throw new Error('Business ID is required for analytics.')
     const query = new URLSearchParams({ fromUtc: params.fromUtc, toUtc: params.toUtc })
     if (params.sort) query.set('sort', params.sort)
     if (params.take) query.set('take', params.take.toString())
-    const target = `${API_BASE_URL}/v1/business/metrics/venues?${query.toString()}`
-    const fallback = params.businessId
-      ? `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/venues?${query.toString()}`
-      : null
-    const resp = await fetch(target, { headers: { Authorization: `Bearer ${idToken}` } })
+    const endpoint = `${API_BASE_URL}/v1/businesses/${encodeURIComponent(params.businessId)}/metrics/venues?${query.toString()}`
+    const resp = await fetch(endpoint, { headers: { Authorization: `Bearer ${idToken}` } })
     if (resp.status === 401 || resp.status === 403) throw new Error('You do not have access to analytics.')
-    if (resp.ok) return resp.json()
-    if (fallback) {
-      const alt = await fetch(fallback, { headers: { Authorization: `Bearer ${idToken}` } })
-      if (alt.status === 401 || alt.status === 403) throw new Error('You do not have access to analytics.')
-      if (!alt.ok) throw new Error('Failed to load venue analytics')
-      return alt.json()
-    }
-    throw new Error('Failed to load venue analytics')
+    if (!resp.ok) throw new Error('Failed to load venue analytics')
+    return resp.json()
   },
 
   async fetchEventMetrics(eventId: string, idToken: string, params: { fromUtc: string; toUtc: string }) {
@@ -1909,7 +1893,7 @@ export const api = {
     return resp.json()
   },
 
-  async validateTicketToken(payload: { token: string; eventId?: string | null; venueId?: string | null; deviceId?: string | null }, idToken: string) {
+  async validateTicketToken(payload: { token: string; eventId?: string | null; venueId?: string | null; businessId?: string | null; deviceId?: string | null }, idToken: string) {
     const resp = await fetch(`${API_BASE_URL}/v1/tickets/validate`, {
       method: 'POST',
       headers: {
@@ -1918,12 +1902,30 @@ export const api = {
       },
       body: JSON.stringify(payload)
     })
-    if (resp.status === 403) throw new Error('You do not have permission to scan this ticket.')
-    if (!resp.ok) {
-      const text = await resp.text()
-      throw new Error(text || 'Failed to validate ticket')
+    const rawText = await resp.text()
+    let data: any = null
+    if (rawText) {
+      try {
+        data = JSON.parse(rawText)
+      } catch {
+        data = { message: rawText }
+      }
     }
-    return resp.json()
+
+    if (!resp.ok) {
+      const reason = data?.reason || data?.code || null
+      const message =
+        resp.status === 403
+          ? 'You do not have permission to scan this ticket.'
+          : data?.message || inferTicketErrorLabel(reason) || 'Failed to validate ticket.'
+      const error: any = new Error(message)
+      error.reason = reason
+      error.status = resp.status
+      error.details = data
+      throw error
+    }
+
+    return data
   },
 
   async submitReport(payload: { eventId: string; reason: string; details?: string; contactEmail?: string }) {

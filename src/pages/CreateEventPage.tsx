@@ -276,12 +276,12 @@ export default function CreateEventPage() {
       if (resp?.id || resp?.eventId) {
         if (heroNavigationDelay > 0) {
           if (typeof window !== 'undefined') {
-            window.setTimeout(() => navigate('/my-events'), heroNavigationDelay)
+            window.setTimeout(() => navigate('/publisher/events'), heroNavigationDelay)
           } else {
-            navigate('/my-events')
+            navigate('/publisher/events')
           }
         } else {
-          navigate('/my-events')
+          navigate('/publisher/events')
         }
       }
     } catch (err: any) {
@@ -342,9 +342,9 @@ export default function CreateEventPage() {
       <SiteNav
         links={[
           { to: '/discover', label: 'Discover' },
-          { to: '/my-events', label: 'My Events' }
+          { to: '/publisher/events', label: 'My Events' }
         ]}
-        activePath="/my-events"
+        activePath="/publisher/events"
       />
 
       <div className="container" style={{ padding: '3rem 0', maxWidth: '800px' }}>
@@ -546,7 +546,7 @@ export default function CreateEventPage() {
                 <small style={{ color: 'var(--gray-600)' }}>Link a known host for better discovery and attribution.</small>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <Link to="/my-events" className="btn btn-secondary">Cancel</Link>
+                <Link to="/publisher/events" className="btn btn-secondary">Cancel</Link>
                 <button className="btn btn-primary" type="submit" disabled={submitting}>
                   {submitting ? 'Submitting…' : 'Submit for Review'}
                 </button>

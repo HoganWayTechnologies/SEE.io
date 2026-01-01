@@ -1,10 +1,16 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNotifications } from '../context/NotificationContext'
+import { useAuth } from '../context/AuthContext'
+import { isBusiness } from '../utils/roles'
 
 export default function NotificationBell() {
   const { notifications, unreadCount, loading, markAllRead } = useNotifications()
+  const auth = useAuth()
   const [open, setOpen] = useState(false)
+  const inboxPath = isBusiness(auth.profile, auth.primaryBusinessId, auth.businessMemberships)
+    ? '/publisher/notifications'
+    : '/inbox'
 
   return (
     <div className="user-menu" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} style={{ marginRight: '0.5rem' }}>
@@ -28,7 +34,7 @@ export default function NotificationBell() {
               <div style={{ fontSize: '0.85rem', color: 'var(--gray-600)' }}>{note.message || note.details || note.body}</div>
             </div>
           ))}
-          <Link to="/inbox" className="user-menu-item" style={{ color: 'var(--primary-blue)', fontWeight: 600 }}>
+          <Link to={inboxPath} className="user-menu-item" style={{ color: 'var(--primary-blue)', fontWeight: 600 }}>
             View inbox
           </Link>
         </div>

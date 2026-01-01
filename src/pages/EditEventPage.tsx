@@ -502,9 +502,9 @@ export default function EditEventPage() {
       <SiteNav
         links={[
           { to: '/discover', label: 'Discover' },
-          { to: '/my-events', label: 'My Events' }
+          { to: '/publisher/events', label: 'My Events' }
         ]}
-        activePath="/my-events"
+        activePath="/publisher/events"
       />
       <div className="container" style={{ padding: '3rem 0', maxWidth: '800px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>

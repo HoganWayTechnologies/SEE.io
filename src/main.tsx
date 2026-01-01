@@ -1,6 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import RequireOnboarding from './components/RequireOnboarding'
 import ScrollToTop from './components/ScrollToTop'
@@ -12,6 +12,13 @@ import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import PreferencesPage from './pages/PreferencesPage'
 import PublisherDashboard from './pages/PublisherDashboard'
+import PublisherEventsPage from './pages/PublisherEventsPage'
+import PublisherEventWizardPage from './pages/PublisherEventWizardPage'
+import PublisherEventSummaryPage from './pages/PublisherEventSummaryPage'
+import PublisherNotificationsPage from './pages/PublisherNotificationsPage'
+import PublisherAnalyticsPage from './pages/PublisherAnalyticsPage'
+import PublisherEventAnalyticsPage from './pages/PublisherEventAnalyticsPage'
+import PublisherSettingsPage from './pages/PublisherSettingsPage'
 import ReportsPage from './pages/ReportsPage'
 import SavedPage from './pages/SavedPage'
 import TicketsPage from './pages/TicketsPage'
@@ -21,8 +28,6 @@ import CategoryPage from './pages/CategoryPage'
 import { AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import { RealtimeProvider } from './context/RealtimeContext'
-import MyEventsPage from './pages/MyEventsPage'
-import CreateEventPage from './pages/CreateEventPage'
 import PageBuilderPage from './pages/PageBuilderPage'
 import PublisherEventManagePage from './pages/PublisherEventManagePage'
 import EditEventPage from './pages/EditEventPage'
@@ -43,11 +48,10 @@ import HostPaymentsPage from './pages/HostPaymentsPage'
 import HostEventTicketsPage from './pages/HostEventTicketsPage'
 import TicketSuccessPage from './pages/TicketSuccessPage'
 import HostScanPage from './pages/HostScanPage'
-import HostAnalyticsPage from './pages/HostAnalyticsPage'
-import EventAnalyticsPage from './pages/EventAnalyticsPage'
 import VenueAnalyticsPage from './pages/VenueAnalyticsPage'
 import NotAuthorizedPage from './pages/NotAuthorizedPage'
 import { RequireAuth, RequireBusiness, RequireAdmin } from './components/RouteGuards'
+import ParamRedirect from './components/ParamRedirect'
 import './styles.css'
 
 function App() {
@@ -73,6 +77,8 @@ function App() {
                 <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
                 <Route path="/preferences" element={<RequireAuth><PreferencesPage /></RequireAuth>} />
                 <Route path="/publisher" element={<RequireBusiness><PublisherDashboard /></RequireBusiness>} />
+                <Route path="/publisher/events" element={<RequireBusiness><PublisherEventsPage /></RequireBusiness>} />
+                <Route path="/publisher/events/new" element={<RequireBusiness><PublisherEventWizardPage /></RequireBusiness>} />
                 <Route path="/reports" element={<RequireAdmin><ReportsPage /></RequireAdmin>} />
                 <Route path="/saved" element={<RequireAuth><SavedPage /></RequireAuth>} />
                 <Route path="/tickets" element={<RequireAuth><TicketsPage /></RequireAuth>} />
@@ -81,16 +87,28 @@ function App() {
                 <Route path="/host/events/:eventId/tickets" element={<RequireBusiness><HostEventTicketsPage /></RequireBusiness>} />
                 <Route path="/host/scan" element={<RequireBusiness><HostScanPage /></RequireBusiness>} />
                 <Route path="/host/events/:eventId/scan" element={<RequireBusiness><HostScanPage /></RequireBusiness>} />
-                <Route path="/host/analytics" element={<RequireBusiness><HostAnalyticsPage /></RequireBusiness>} />
-                <Route path="/host/events/:eventId/analytics" element={<RequireBusiness><EventAnalyticsPage /></RequireBusiness>} />
+                <Route path="/host/analytics" element={<RequireBusiness><Navigate to="/publisher/analytics" replace /></RequireBusiness>} />
+                <Route
+                  path="/host/events/:eventId/analytics"
+                  element={
+                    <RequireBusiness>
+                      <ParamRedirect to={(params) => `/publisher/events/${params.eventId || ''}/analytics`} />
+                    </RequireBusiness>
+                  }
+                />
                 <Route path="/host/venues/:venueId/analytics" element={<RequireBusiness><VenueAnalyticsPage /></RequireBusiness>} />
                 <Route path="/inbox" element={<RequireAuth><InboxPage /></RequireAuth>} />
                 <Route path="/calendar" element={<RequireAuth><CalendarPage /></RequireAuth>} />
-                <Route path="/my-events" element={<RequireBusiness><MyEventsPage /></RequireBusiness>} />
-                <Route path="/publisher/create" element={<RequireBusiness><CreateEventPage /></RequireBusiness>} />
+                <Route path="/my-events" element={<RequireBusiness><Navigate to="/publisher/events" replace /></RequireBusiness>} />
+                <Route path="/publisher/create" element={<RequireBusiness><Navigate to="/publisher/events/new" replace /></RequireBusiness>} />
                 <Route path="/publisher/events/:eventId" element={<RequireBusiness><PublisherEventManagePage /></RequireBusiness>} />
                 <Route path="/publisher/events/:eventId/edit" element={<RequireBusiness><EditEventPage /></RequireBusiness>} />
                 <Route path="/publisher/events/:eventId/page" element={<RequireBusiness><PageBuilderPage /></RequireBusiness>} />
+                <Route path="/publisher/events/:eventId/analytics" element={<RequireBusiness><PublisherEventAnalyticsPage /></RequireBusiness>} />
+                <Route path="/publisher/events/:eventId/summary" element={<RequireBusiness><PublisherEventSummaryPage /></RequireBusiness>} />
+                <Route path="/publisher/analytics" element={<RequireBusiness><PublisherAnalyticsPage /></RequireBusiness>} />
+                <Route path="/publisher/notifications" element={<RequireBusiness><PublisherNotificationsPage /></RequireBusiness>} />
+                <Route path="/publisher/settings" element={<RequireBusiness><PublisherSettingsPage /></RequireBusiness>} />
                 <Route path="/publisher/business/:businessId/page" element={<RequireBusiness><BusinessPageBuilder /></RequireBusiness>} />
                 <Route path="/publisher/business/page" element={<RequireBusiness><BusinessPageBuilder /></RequireBusiness>} />
                 <Route path="/business/:businessId" element={<BusinessProfilePage />} />

@@ -32,8 +32,8 @@ export default function UserMenu() {
           <Link to="/inbox" className="user-menu-item">Inbox</Link>
           {isBusiness(auth.profile, auth.primaryBusinessId, auth.businessMemberships) && (
             <>
-              <Link to="/my-events" className="user-menu-item">My Events</Link>
-              <Link to="/host/analytics" className="user-menu-item">Host Analytics</Link>
+              <Link to="/publisher/events" className="user-menu-item">My Events</Link>
+              <Link to="/publisher/analytics" className="user-menu-item">Publisher Analytics</Link>
             </>
           )}
           <Link to="/profile" className="user-menu-item">Profile</Link>

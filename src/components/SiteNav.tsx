@@ -31,9 +31,9 @@ export default function SiteNav({ links = defaultLinks, activePath, searchSlot }
   const computedLinks = useMemo(() => {
     const merged = [...links]
     if (isBusiness(auth.profile, auth.primaryBusinessId, auth.businessMemberships)) {
-      const hostLink = '/host/analytics'
+      const hostLink = '/publisher'
       if (!merged.some(link => link.to === hostLink)) {
-        merged.push({ to: hostLink, label: 'Host Portal', key: 'host-portal' })
+        merged.push({ to: hostLink, label: 'Publisher', key: 'host-portal' })
       }
     }
     if (isAdmin(auth.profile)) {

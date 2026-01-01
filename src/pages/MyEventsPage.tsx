@@ -340,10 +340,10 @@ export default function MyEventsPage() {
   return (
     <div>
       <SiteNav
-        activePath="/my-events"
+        activePath="/publisher/events"
         links={[
           { to: '/discover', label: 'Discover' },
-          { to: '/my-events', label: 'My Events' },
+          { to: '/publisher/events', label: 'My Events' },
           { to: '/saved', label: 'Saved' }
         ]}
       />
@@ -372,7 +372,7 @@ export default function MyEventsPage() {
               </select>
             </div>
             <Link to="/publisher" className="btn btn-secondary">Publisher Console</Link>
-            <Link to="/publisher/create" className="btn btn-primary">Create Event</Link>
+            <Link to="/publisher/events/new" className="btn btn-primary">Create Event</Link>
           </div>
         </header>
 
